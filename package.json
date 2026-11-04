@@ -1,0 +1,51 @@
+{
+  "name": "baseedit-insight",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "worker": "tsx worker/index.ts",
+    "dev:all": "concurrently -n web,worker -c cyan,magenta \"next dev\" \"tsx watch worker/index.ts\"",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:backup": "tsx scripts/backup.ts",
+    "pipeline:run": "tsx scripts/run-pipeline.ts",
+    "live:check": "tsx scripts/live-check.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start:all": "concurrently -n web,worker -c cyan,magenta \"next start\" \"tsx worker/index.ts\"",
+    "db:repair-text": "tsx scripts/repair-text.ts",
+    "db:repair-access": "tsx scripts/repair-access.ts",
+    "db:reverify": "tsx scripts/reverify-all.ts",
+    "db:translate-titles": "tsx scripts/translate-missing.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "fast-xml-parser": "^5.2.5",
+    "lucide-react": "^0.468.0",
+    "next": "^15.5.7",
+    "node-cron": "^4.2.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-force-graph-2d": "^1.27.0",
+    "tsx": "^4.20.6",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "concurrently": "^9.2.1",
+    "playwright-core": "^1.64.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

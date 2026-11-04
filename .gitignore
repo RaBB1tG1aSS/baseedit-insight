@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+data/*.db
+data/*.db-*
+data/*.sqlite
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+
+data/screens/
+data/backups/
+data/*.html
+*.tsbuildinfo
