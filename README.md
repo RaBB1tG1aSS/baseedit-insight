@@ -47,6 +47,16 @@ BaseEdit Insight 是一个可以自己部署、长期积累的 **碱基编辑（
 ### 每周研究进展
 - 直接读取中央数据库，区分「本周新发表」「新检索到的历史论文」「本周通过核验并入库」；
 - 支持 Markdown 导出与浏览器打印 PDF。
+### 全局搜索与论文对比
+- 一次搜索已核验论文、知识实体、有证据关系、技术时间线与周报；
+- 在文献卡片点击「对比」，最多选择 3 篇论文，并排比较研究问题、结果、创新、局限与全文状态；
+- 支持导出所选论文的 BibTeX。
+
+### 研究洞察与个性化推荐
+- 发表年份、研究方向、评分分布、期刊、知识实体类型、高被引论文等数据库统计；
+- 依据个人收藏、已读、笔记与打开记录计算方向权重，推荐未读论文；
+- 明确标注样本量限制，不把局部统计包装成领域趋势。
+
 
 ### 研究控制台
 首页集成了 P0 工作台：**双轨精选 / 手动检索 / 精讲队列 / 候选审核 / 运行控制**，日常操作不需要在多个页面之间切换。
@@ -66,9 +76,13 @@ BaseEdit Insight 是一个可以自己部署、长期积累的 **碱基编辑（
 | --- | --- |
 | ![论文精讲](docs/screenshots/paper.png) | ![知识图谱](docs/screenshots/knowledge-graph.png) |
 
-| 技术时间线 |
+| 技术时间线 | 研究洞察 |
+| --- | --- |
+| ![技术时间线](docs/screenshots/timeline.png) | ![研究洞察](docs/screenshots/insights.png) |
+
+| 论文对比 |
 | --- |
-| ![技术时间线](docs/screenshots/timeline.png) |
+| ![论文对比](docs/screenshots/compare.png) |
 
 ---
 
@@ -145,6 +159,9 @@ npm run start:all     # Web + Worker
 | `/papers/[id]` | 中文精讲、逐图分析、证据引用、笔记与阅读进度 |
 | `/graph` | 交互式知识图谱 |
 | `/timeline` | 技术发展时间线 |
+| `/insights` | 研究洞察、趋势分布与个性化推荐 |
+| `/compare?ids=…` | 2–3 篇论文并排对比 |
+| `/search?q=…` | 跨论文、实体、关系、时间线与周报的全局搜索 |
 | `/weekly` | 每周研究进展与历史周报 |
 | `/agent` | 任务队列、真实进度、执行日志 |
 | `/candidates` | 候选 / 未通过文献审核 |
@@ -242,12 +259,12 @@ Europe PMC / PubMed / Crossref / OpenAlex
 ## 测试
 
 ```bash
-npm test            # 31 个单元 / 数据库测试
+npm test            # 37 个单元 / 数据库测试
 npm run live:check  # 真实 Europe PMC / PubMed / Crossref 冒烟测试（不写库）
 npm run build       # 生产构建
 ```
 
-已覆盖：DOI 规范化、跨源去重、撤稿状态、质量评分边界、相关性门槛、PubMed 解析、候选隔离、单日推荐唯一、实体/关系去重、任务原子领取、设置持久化。
+已覆盖：DOI 规范化、跨源去重、撤稿状态、质量评分边界、相关性门槛、PubMed 解析、候选隔离、单日推荐唯一、实体/关系去重、任务原子领取、设置持久化、BibTeX、全局搜索、个性化推荐与洞察聚合。
 
 实际测试记录与浏览器 QA 结果见 [TESTING.md](./TESTING.md)。
 
@@ -279,6 +296,7 @@ npm run build       # 生产构建
 - [DEPLOYMENT.md](./DEPLOYMENT.md) — systemd、Docker、备份恢复与反向代理
 - [TESTING.md](./TESTING.md) — 实际测试与验收记录
 - [P0-AUDIT.md](./P0-AUDIT.md) — P0 客户端功能审计
+- [P1-P2-AUDIT.md](./P1-P2-AUDIT.md) — P1/P2 建设进度与剩余边界
 - [.env.example](./.env.example) — 全部环境变量
 
 ---

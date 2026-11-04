@@ -35,6 +35,7 @@ import type { TocItem } from "@/components/toc";
 import { FigureBlock } from "@/components/figure-viewer";
 import { PaperSidebar } from "@/components/paper-sidebar";
 import { FavoriteButton, NoteEditor, ReadStatusControl, ReadingTracker } from "@/components/library-controls";
+import { CompareToggle } from "@/components/compare-controls";
 import { ActionButton } from "@/components/action-button";
 import { PrintButton } from "@/components/print-button";
 import {
@@ -163,6 +164,7 @@ export default async function PaperPage({ params }: { params: Promise<{ id: stri
             <ScoreRing score={paper.qualityScore} size={84} stroke={6} />
             <div className="no-print flex flex-wrap items-center justify-end gap-2">
               <FavoriteButton paperId={paper.id} initial={Boolean(userRecord?.favorite)} compact />
+              <CompareToggle paperId={paper.id} />
               <ReadStatusControl paperId={paper.id} initial={userRecord?.readStatus ?? "unread"} />
             </div>
           </div>
@@ -195,6 +197,12 @@ export default async function PaperPage({ params }: { params: Promise<{ id: stri
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[12px] text-ink-2 hover:border-line-strong"
           >
             <Download size={12} /> Markdown
+          </a>
+          <a
+            href={`/api/export/bibtex?ids=${paper.id}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[12px] text-ink-2 hover:border-line-strong"
+          >
+            <Download size={12} /> BibTeX
           </a>
           <PrintButton />
           <span className="ml-auto text-[10.5px] text-faint">

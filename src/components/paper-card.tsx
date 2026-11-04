@@ -5,6 +5,7 @@ import { FOCUS_LABEL } from "@/lib/constants";
 import { authorsLine, formatDate } from "@/lib/format";
 import { Badge, PeerReviewBadge, RetractionBadge, cx } from "./ui";
 import { FavoriteButton } from "./library-controls";
+import { CompareToggle } from "./compare-controls";
 
 export type PaperCardData = PaperSummary & { userRecord?: UserRecord | null };
 
@@ -31,7 +32,7 @@ export function PaperCard({
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {recLabel ? <Badge variant={paper.recommendationCategory === "landmark" ? "gold" : "accent"}>{recLabel}</Badge> : null}
           <PeerReviewBadge status={paper.peerReviewStatus} />
@@ -57,6 +58,7 @@ export function PaperCard({
             <span className="mt-0.5 text-[8px] text-faint">/100</span>
           </div>
           {showFavorite ? <FavoriteButton paperId={paper.id} initial={Boolean(paper.userRecord?.favorite)} compact /> : null}
+          <CompareToggle paperId={paper.id} />
         </div>
       </div>
 

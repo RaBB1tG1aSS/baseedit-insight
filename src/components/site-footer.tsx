@@ -33,6 +33,21 @@ export function SiteFooter() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/insights" className="hover:text-accent">
+                  研究洞察
+                </Link>
+              </li>
+              <li>
+                <Link href="/compare" className="hover:text-accent">
+                  论文对比
+                </Link>
+              </li>
+              <li>
+                <Link href="/search" className="hover:text-accent">
+                  全局搜索
+                </Link>
+              </li>
             </ul>
           </div>
 

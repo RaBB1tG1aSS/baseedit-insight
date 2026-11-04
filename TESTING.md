@@ -11,8 +11,8 @@ npm test
 ```
 
 ```
-Test Files  7 passed (7)
-Tests       31 passed (31)
+Test Files  8 passed (8)
+Tests       37 passed (37)
 Duration    ~1 s
 ```
 
@@ -24,7 +24,8 @@ Duration    ~1 s
 | `tests/quality.test.ts` | 7 维评分边界、撤稿可靠性归零、预印本可靠性上限 |
 | `tests/time.test.ts` | 跨月日期、周一制周区间、Asia/Singapore → UTC、下次每日/每周时间 |
 | `tests/pubmed.test.ts` | PubMed XML：PMID/DOI/PMCID、作者、摘要、撤稿信号、同行评审 |
-| `tests/db.test.ts` | 候选隔离、DOI 反查、收藏/进度/笔记/历史、单日推荐唯一、实体别名去重、关系唯一、任务原子领取/去重、设置持久化 |
+| `tests/db.test.ts` | 候选隔离、DOI 反查、收藏/进度/笔记/历史、单日推荐唯一、实体别名去重、关系唯一、任务原子领取/去重、设置持久化、个性化推荐、全局搜索、洞察聚合 |
+| `tests/bibtex.test.ts` | BibTeX 文章条目、缺失期刊回退、多篇合并、作者/DOI/PMID/PMCID 字段 |
 
 构建：
 
@@ -149,7 +150,11 @@ Playwright/Chrome 实测结果（截图在 `data/screens/`，JSON 为 `qa-report
 - 设置：保存后 worker 30 秒内重新加载调度；在线备份 API 实测成功（`data/backups/baseedit-*.db`，3.7 MB）。
 - 深色模式：`html.dark` 生效，首页截图正常。
 - 首页 **P0 研究控制台**：双轨精选 / 手动检索 / 精讲队列 / 候选审核 / 运行控制 5 个标签全部可切换，内容校验通过（见 `qa-report.json` 的 `consoleTabs`）。
-- 移动端（390×844）：无横向溢出（overflow = 0px）。
+- **全局搜索** `/search?q=base editing`：论文与知识实体分组均有结果，无控制台错误。
+- **研究洞察** `/insights`：发表年份分布与个性化推荐渲染正常。
+- **论文对比** `/compare?ids=…`：2 篇并排比较，主要结果/创新/局限/数据字段完整。
+- **对比浮层**：文献库点击「对比」后出现「已选 1 篇论文」浮层，可清空，localStorage 行为正常。
+- 移动端（390×844）：`/`、`/papers`、`/papers/[id]`、`/insights`、`/search`、`/compare` 横向溢出均为 0px。
 
 > 未验证项不会标记为通过；见第 7 节。
 

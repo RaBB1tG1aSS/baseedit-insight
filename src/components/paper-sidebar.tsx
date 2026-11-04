@@ -211,6 +211,12 @@ export function PaperSidebar({
           >
             <Download size={12} /> 导出 Markdown
           </a>
+          <a
+            href={`/api/export/bibtex?ids=${paper.id}`}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[12px] text-ink-2 hover:border-line-strong"
+          >
+            <Download size={12} /> 导出 BibTeX
+          </a>
         </div>
         <p className="mt-3 text-[9.5px] leading-4 text-faint">
           分析任务由后台 worker 执行；运行状态可在 Agent 页面查看真实日志。

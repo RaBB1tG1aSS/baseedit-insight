@@ -131,8 +131,8 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[250px_1fr]">
-        <aside className="space-y-5">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[250px_1fr]">
+        <aside className="min-w-0 space-y-5">
           <details className="card overflow-hidden lg:!border-0 lg:!bg-transparent lg:!shadow-none" open>
             <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 lg:px-0 lg:py-0">
               <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink">
@@ -140,7 +140,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
               </span>
               <span className="text-[10px] text-faint lg:hidden">展开 / 收起</span>
             </summary>
-            <form action="/papers" method="get" className="space-y-4 px-5 pb-5 lg:px-0 lg:pb-0 lg:pt-4">
+            <form action="/papers" method="get" className="min-w-0 space-y-4 px-5 pb-5 lg:px-0 lg:pb-0 lg:pt-4">
               <Field label="标题 / 关键词">
                 <div className="relative">
                   <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
@@ -168,7 +168,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
                   className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 font-mono text-[11px] text-ink placeholder:text-faint focus:border-accent/50 focus:outline-none"
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid min-w-0 grid-cols-2 gap-2">
                 <Field label="年份">
                   <select name="year" defaultValue={year ?? ""} className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-[12px] text-ink focus:border-accent/50 focus:outline-none">
                     <option value="">全部</option>
@@ -286,7 +286,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
           ) : null}
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[12px] text-muted">
@@ -308,7 +308,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
           </div>
 
           {result.papers.length ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {result.papers.map((paper) => (
                 <PaperCard key={paper.id} paper={paper} />
               ))}
@@ -379,7 +379,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1 block text-[10.5px] font-medium tracking-wide text-faint">{label}</span>
       {children}
     </label>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { CompareDock } from "@/components/compare-controls";
 import { getWorkerStatus } from "@/server/db/repo/dashboard";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <SiteFooter />
+        <CompareDock />
       </body>
     </html>
   );

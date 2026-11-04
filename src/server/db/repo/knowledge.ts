@@ -583,3 +583,109 @@ export function getWeeklyReportMonths(): string[] {
     .all() as { month: string }[];
   return rows.map((row) => row.month);
 }
+
+/* ───────────────────────────── Search helpers ──────────────────────────── */
+
+function likePattern(query: string): string {
+  return `%${query.replace(/[!%_]/g, (m) => `!${m}`)}%`;
+}
+
+export function searchEntities(query: string, limit = 6): KnowledgeEntity[] {
+  const like = likePattern(query);
+  const rows = getDb()
+    .prepare(
+      `SELECT e.*,
+        (SELECT COUNT(DISTINCT paper_id) FROM entity_paper_links l WHERE l.entity_id = e.entity_id) AS paper_count,
+        (SELECT MIN(substr(p.publication_date,1,4)) FROM entity_paper_links l JOIN papers p ON p.id = l.paper_id WHERE l.entity_id = e.entity_id) AS first_year
+       FROM knowledge_entities e
+       WHERE e.name LIKE ? ESCAPE '!' OR e.name_zh LIKE ? ESCAPE '!' OR e.aliases_json LIKE ? ESCAPE '!'
+       ORDER BY paper_count DESC, e.name
+       LIMIT ?`,
+    )
+    .all(like, like, like, limit) as Record<string, unknown>[];
+
+  return rows.map((row) => ({
+    id: String(row.entity_id),
+    name: String(row.name),
+    nameZh: (row.name_zh as string | null) ?? null,
+    type: row.entity_type as EntityType,
+    description: (row.description as string | null) ?? null,
+    aliases: parseJson<string[]>(row.aliases_json as string, []),
+    paperCount: Number(row.paper_count ?? 0),
+    firstYear: row.first_year == null ? null : Number(row.first_year),
+  }));
+}
+
+export function searchRelations(query: string, limit = 6): KnowledgeRelation[] {
+  const like = likePattern(query);
+  const rows = getDb()
+    .prepare(
+      `SELECT r.*, s.name AS source_name, t.name AS target_name, p.title AS paper_title
+       FROM knowledge_relations r
+       JOIN knowledge_entities s ON s.entity_id = r.source_entity_id
+       JOIN knowledge_entities t ON t.entity_id = r.target_entity_id
+       JOIN papers p ON p.id = r.paper_id
+       WHERE p.status = 'accepted'
+         AND (s.name LIKE ? ESCAPE '!' OR t.name LIKE ? ESCAPE '!'
+              OR r.evidence_text LIKE ? ESCAPE '!' OR r.relation_type LIKE ? ESCAPE '!')
+       ORDER BY r.created_at DESC LIMIT ?`,
+    )
+    .all(like, like, like, like, limit) as Record<string, unknown>[];
+
+  return rows.map((row) => ({
+    id: String(row.relation_id),
+    sourceId: String(row.source_entity_id),
+    sourceName: String(row.source_name),
+    targetId: String(row.target_entity_id),
+    targetName: String(row.target_name),
+    relationType: String(row.relation_type),
+    paperId: String(row.paper_id),
+    paperTitle: String(row.paper_title ?? ""),
+    evidenceText: String(row.evidence_text ?? ""),
+    evidenceLocation: String(row.evidence_location ?? ""),
+    nature: row.nature as EvidenceNature,
+    confidence: Number(row.confidence ?? 0.5),
+    createdAt: String(row.created_at),
+  }));
+}
+
+export function searchTimeline(query: string, limit = 6): TimelineEvent[] {
+  const like = likePattern(query);
+  const rows = getDb()
+    .prepare(
+      `SELECT e.*, p.title AS paper_title
+       FROM timeline_events e JOIN papers p ON p.id = e.paper_id
+       WHERE p.status = 'accepted'
+         AND (e.title LIKE ? ESCAPE '!' OR e.title_zh LIKE ? ESCAPE '!'
+              OR e.description LIKE ? ESCAPE '!' OR p.title LIKE ? ESCAPE '!')
+       ORDER BY e.event_date DESC LIMIT ?`,
+    )
+    .all(like, like, like, like, limit) as Record<string, unknown>[];
+
+  return rows.map((row) => ({
+    id: String(row.event_id),
+    eventDate: String(row.event_date),
+    dateKind: row.date_kind as TimelineEvent["dateKind"],
+    title: String(row.title),
+    titleZh: (row.title_zh as string | null) ?? null,
+    description: (row.description as string | null) ?? null,
+    category: String(row.category),
+    paperId: String(row.paper_id),
+    paperTitle: String(row.paper_title ?? ""),
+    significance: Number(row.significance ?? 3),
+    evidenceText: (row.evidence_text as string | null) ?? null,
+    createdAt: String(row.created_at),
+  }));
+}
+
+export function searchWeeklyReports(query: string, limit = 4): WeeklyReport[] {
+  const like = likePattern(query);
+  const rows = getDb()
+    .prepare(
+      `SELECT * FROM weekly_reports
+       WHERE title LIKE ? ESCAPE '!' OR content_md LIKE ? ESCAPE '!'
+       ORDER BY week_start DESC LIMIT ?`,
+    )
+    .all(like, like, limit) as Record<string, unknown>[];
+  return rows.map(mapReport);
+}

@@ -43,6 +43,12 @@ async function main(): Promise<void> {
     (database.prepare("SELECT id FROM papers WHERE status='accepted' ORDER BY quality_score DESC LIMIT 1").get() as
       | { id: string }
       | undefined)?.id;
+
+  const secondPaperId = (
+    database
+      .prepare("SELECT id FROM papers WHERE status='accepted' AND id <> ? ORDER BY quality_score DESC LIMIT 1")
+      .get(paperId) as { id: string } | undefined
+  )?.id;
   const reportId = (
     database
       .prepare("SELECT report_id FROM weekly_reports ORDER BY week_start DESC LIMIT 1")
@@ -104,7 +110,24 @@ async function main(): Promise<void> {
         return { consoleTabs: validations };
       },
     },
-    { name: "library", url: "/papers", file: "02-library.png", fullPage: true, waitMs: 800 },
+    {
+      name: "library",
+      url: "/papers",
+      file: "02-library.png",
+      fullPage: true,
+      waitMs: 800,
+      action: async (target) => {
+        const compareButton = target.getByRole("button", { name: /^对比$/ }).first();
+        await compareButton.click();
+        await target.waitForTimeout(500);
+        const dockVisible = (await target.locator("text=已选 1 篇论文").count()) > 0;
+        await target.evaluate(() => {
+          localStorage.removeItem("baseedit-compare");
+          window.dispatchEvent(new Event("baseedit-compare-change"));
+        });
+        return { compareDockVisible: dockVisible };
+      },
+    },
     {
       name: "paper-top",
       url: `/papers/${paperId}`,
@@ -187,6 +210,43 @@ async function main(): Promise<void> {
     { name: "graph", url: "/graph", file: "05-graph.png", fullPage: true, waitMs: 3500 },
     { name: "timeline", url: "/timeline", file: "06-timeline.png", fullPage: true, waitMs: 900 },
     { name: "weekly", url: "/weekly", file: "07-weekly.png", fullPage: true, waitMs: 600 },
+    {
+      name: "global-search",
+      url: "/search?q=base%20editing",
+      file: "15-global-search.png",
+      fullPage: true,
+      waitMs: 900,
+      action: async (target) => {
+        const text = await target.locator("body").innerText();
+        return { hasPapers: text.includes("已核验论文"), hasEntities: text.includes("知识实体") };
+      },
+    },
+    {
+      name: "insights",
+      url: "/insights",
+      file: "16-insights.png",
+      fullPage: true,
+      waitMs: 1000,
+      action: async (target) => {
+        const text = await target.locator("body").innerText();
+        return { hasPersonalized: text.includes("个性化推荐"), hasYearChart: text.includes("发表年份分布") };
+      },
+    },
+    ...(secondPaperId
+      ? [
+          {
+            name: "compare",
+            url: "/compare?ids=" + paperId + "," + secondPaperId,
+            file: "17-compare.png",
+            fullPage: true,
+            waitMs: 900,
+            action: async (target: import("playwright-core").Page) => {
+              const text = await target.locator("body").innerText();
+              return { hasComparison: text.includes("论文对比") && text.includes("主要结果") };
+            },
+          },
+        ]
+      : []),
     ...(reportId
       ? [
           {
@@ -259,9 +319,23 @@ async function main(): Promise<void> {
   await mobilePage.goto(`${BASE}/papers/${paperId}`, { waitUntil: "domcontentloaded" });
   await mobilePage.waitForTimeout(1200);
   await mobilePage.screenshot({ path: path.join(OUT, "13-paper-mobile.png"), fullPage: true });
-  const mobileOverflow = await mobilePage.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
+  const mobileOverflowByPage: Record<string, number> = {};
+  const mobilePaths = [
+    "/",
+    "/papers/" + paperId,
+    "/papers",
+    "/insights",
+    "/search?q=base",
+    ...(secondPaperId ? ["/compare?ids=" + paperId + "," + secondPaperId] : []),
+  ];
+  for (const path of mobilePaths) {
+    await mobilePage.goto(BASE + path, { waitUntil: "domcontentloaded" });
+    await mobilePage.waitForTimeout(700);
+    mobileOverflowByPage[path] = await mobilePage.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+  }
+  const mobileOverflow = Math.max(0, ...Object.values(mobileOverflowByPage));
   await mobileContext.close();
 
   await context.close();
@@ -272,6 +346,7 @@ async function main(): Promise<void> {
     figureCount,
     darkModeApplied: darkClass,
     mobileHorizontalOverflowPx: mobileOverflow,
+    mobileOverflowByPage,
     consoleErrors,
     pageErrors,
     failedRequests,

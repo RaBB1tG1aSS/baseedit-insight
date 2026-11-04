@@ -404,6 +404,12 @@ export default function DashboardPage() {
                 </Link>
               ))}
             </div>
+            <Link
+              href="/insights"
+              className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-medium text-accent hover:text-accent-strong"
+            >
+              研究洞察与个性化推荐 <ArrowRight size={12} />
+            </Link>
           </div>
 
           <div className="card p-5">

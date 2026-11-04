@@ -23,6 +23,7 @@ import {
   type PaperRow,
 } from "../mappers";
 import { escapeLike, normalizeDoi, titleKey } from "../../utils/normalize";
+import { FOCUS_LABEL } from "@/lib/constants";
 
 export interface PaperInput {
   id?: string;
@@ -716,4 +717,91 @@ export function getAcceptedWithoutDeepRead(limit = 8): PaperSummary[] {
     )
     .all(limit) as PaperRow[];
   return rows.map(mapPaperSummary);
+}
+
+export interface PersonalizedRecommendations {
+  basis: "history" | "quality";
+  topAreas: string[];
+  items: { paper: PaperSummary; reason: string; affinity: number }[];
+}
+
+/**
+ * P2 personalised recommendations derived only from the user's own reading
+ * history (favourites, read status, notes, opens) and focus-area affinity.
+ */
+export function getPersonalizedRecommendations(limit = 5): PersonalizedRecommendations {
+  const db = getDb();
+  const history = db
+    .prepare(
+      `SELECT u.paper_id, u.favorite, u.read_status, u.note, u.last_opened_at, p.focus_areas_json
+       FROM user_records u JOIN papers p ON p.id = u.paper_id
+       WHERE p.status = 'accepted'`,
+    )
+    .all() as {
+    paper_id: string;
+    favorite: number;
+    read_status: string;
+    note: string;
+    last_opened_at: string | null;
+    focus_areas_json: string;
+  }[];
+
+  const areaWeights = new Map<FocusArea, number>();
+  const seen = new Set<string>();
+
+  for (const record of history) {
+    seen.add(record.paper_id);
+    const weight =
+      1 +
+      (record.favorite ? 2 : 0) +
+      (record.read_status === "read" ? 1 : 0) +
+      (record.note ? 1 : 0) +
+      (record.last_opened_at ? 0.5 : 0);
+    for (const area of parseJson<FocusArea[]>(record.focus_areas_json, [])) {
+      areaWeights.set(area, (areaWeights.get(area) ?? 0) + weight);
+    }
+  }
+
+  const topAreas = [...areaWeights.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([area]) => FOCUS_LABEL[area]);
+
+  const rows = db
+    .prepare(
+      `SELECT ${PAPER_COLUMNS} FROM papers p
+       WHERE p.status = 'accepted'
+       ORDER BY p.quality_score DESC`,
+    )
+    .all() as PaperRow[];
+
+  const items = rows
+    .map(mapPaperSummary)
+    .filter((paper) => !seen.has(paper.id))
+    .map((paper) => {
+      const affinity = paper.focusAreas.reduce((sum, area) => sum + (areaWeights.get(area) ?? 0), 0);
+      return {
+        paper,
+        affinity,
+        reason:
+          affinity > 0
+            ? `与你常读的「${paper.focusAreas
+                .filter((area) => (areaWeights.get(area) ?? 0) > 0)
+                .map((area) => FOCUS_LABEL[area])
+                .join("、")}」方向相近 · 综合评分 ${paper.qualityScore ?? "—"}`
+            : `按综合评分推荐 · ${paper.journal ?? "未知期刊"}`,
+      };
+    })
+    .sort((a, b) => {
+      const scoreA = (a.paper.qualityScore ?? 0) + a.affinity * 1.5;
+      const scoreB = (b.paper.qualityScore ?? 0) + b.affinity * 1.5;
+      return scoreB - scoreA;
+    })
+    .slice(0, limit);
+
+  return {
+    basis: history.length ? "history" : "quality",
+    topAreas,
+    items,
+  };
 }

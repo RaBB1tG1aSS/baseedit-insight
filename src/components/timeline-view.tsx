@@ -4,17 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowUpRight, CalendarRange, Milestone, Search } from "lucide-react";
 import type { TimelineEvent } from "@/lib/types";
+import { TIMELINE_CATEGORY_LABEL } from "@/lib/constants";
 import { Badge, EmptyState, cx } from "./ui";
 import { ActionButton } from "./action-button";
-
-const CATEGORY_LABEL: Record<string, string> = {
-  editors: "编辑器技术",
-  safety: "安全性",
-  delivery: "递送技术",
-  disease: "疾病治疗",
-  field: "领域发展",
-  milestone: "里程碑",
-};
 
 const DATE_KIND_LABEL: Record<TimelineEvent["dateKind"], { label: string; variant: "success" | "warn" | "outline" }> = {
   publication: { label: "发表日期", variant: "outline" },
@@ -108,7 +100,7 @@ export function TimelineView({ events }: { events: TimelineEvent[] }) {
           <option value="">全部方向</option>
           {categories.map((item) => (
             <option key={item} value={item}>
-              {CATEGORY_LABEL[item] ?? item}
+              {TIMELINE_CATEGORY_LABEL[item] ?? item}
             </option>
           ))}
         </select>
@@ -146,7 +138,7 @@ export function TimelineView({ events }: { events: TimelineEvent[] }) {
                         <Badge variant={DATE_KIND_LABEL[event.dateKind].variant}>
                           {DATE_KIND_LABEL[event.dateKind].label}
                         </Badge>
-                        <Badge variant="outline">{CATEGORY_LABEL[event.category] ?? event.category}</Badge>
+                        <Badge variant="outline">{TIMELINE_CATEGORY_LABEL[event.category] ?? event.category}</Badge>
                         <span className="ml-auto flex items-center gap-0.5" title={`重要度 ${event.significance}/5`}>
                           {Array.from({ length: 5 }).map((_, index) => (
                             <span

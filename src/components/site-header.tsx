@@ -36,7 +36,7 @@ export function SiteHeader({ workerOnline }: { workerOnline: boolean }) {
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const value = query.trim();
-    router.push(value ? `/papers?q=${encodeURIComponent(value)}` : "/papers");
+    router.push(value ? `/search?q=${encodeURIComponent(value)}` : "/search");
   };
 
   return (
@@ -86,8 +86,8 @@ export function SiteHeader({ workerOnline }: { workerOnline: boolean }) {
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索标题 / 作者 / DOI"
-                aria-label="搜索文献"
+                placeholder="搜索论文 / 概念 / 周报"
+                aria-label="全局搜索"
                 className="h-9 w-52 rounded-full border border-line bg-surface pl-8 pr-12 text-[12.5px] text-ink placeholder:text-faint focus:border-accent/50 focus:outline-none lg:w-60"
               />
               <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-line px-1.5 py-0.5 text-[9px] text-faint">
@@ -149,7 +149,7 @@ export function SiteHeader({ workerOnline }: { workerOnline: boolean }) {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="搜索标题 / 作者 / DOI"
+                  placeholder="搜索论文 / 概念 / 周报"
                   className="h-10 w-full rounded-xl border border-line bg-bg pl-9 pr-3 text-sm focus:border-accent/50 focus:outline-none"
                 />
               </div>
@@ -167,6 +167,27 @@ export function SiteHeader({ workerOnline }: { workerOnline: boolean }) {
                 <span className="text-[10px] uppercase tracking-widest text-faint">{item.en}</span>
               </Link>
             ))}
+            <Link
+              href="/insights"
+              className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-ink-2 hover:bg-surface-2"
+            >
+              <span>研究洞察</span>
+              <span className="text-[10px] uppercase tracking-widest text-faint">Insights</span>
+            </Link>
+            <Link
+              href="/compare"
+              className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-ink-2 hover:bg-surface-2"
+            >
+              <span>论文对比</span>
+              <span className="text-[10px] uppercase tracking-widest text-faint">Compare</span>
+            </Link>
+            <Link
+              href="/search"
+              className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-ink-2 hover:bg-surface-2"
+            >
+              <span>全局搜索</span>
+              <span className="text-[10px] uppercase tracking-widest text-faint">Search</span>
+            </Link>
             <Link
               href="/candidates"
               className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-ink-2 hover:bg-surface-2"

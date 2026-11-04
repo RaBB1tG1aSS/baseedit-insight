@@ -106,10 +106,10 @@ P0 的日常操作现在集中在首页的 **P0 Workspace / 研究控制台**（
 ## 6. 验收命令
 
 ```bash
-npm test                 # 31 passed
+npm test                 # 37 passed
 npm run build            # 生产构建
 npm run live:check       # 真实 API 冒烟
 npx tsx scripts/qa.ts    # 浏览器 QA（0 console error）
 ```
 
-最新 QA 结果：11 个页面 + P0 控制台 5 个标签全部通过，控制台/页面错误 0，图片 4/4 加载，移动端横向溢出 0。
+最新 QA 结果：全部页面 + P0 控制台 5 个标签 + 全局搜索 / 研究洞察 / 论文对比全部通过，控制台/页面错误 0，图片 4/4 加载，移动端横向溢出 0。

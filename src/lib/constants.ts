@@ -114,3 +114,12 @@ export const PRIMARY_SEARCH_QUERY = [
   'OR "ABE8e" OR "BE4max" OR "TadA" OR "CBE" OR "ABE")',
   "AND (CRISPR OR Cas9 OR deaminase OR genome)",
 ].join(" ");
+
+export const TIMELINE_CATEGORY_LABEL: Record<string, string> = {
+  editors: "编辑器技术",
+  safety: "安全性",
+  delivery: "递送技术",
+  disease: "疾病治疗",
+  field: "领域发展",
+  milestone: "里程碑",
+};

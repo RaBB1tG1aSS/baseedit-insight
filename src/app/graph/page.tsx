@@ -7,7 +7,10 @@ import { Kicker } from "@/components/ui";
 export const metadata: Metadata = { title: "知识图谱" };
 export const dynamic = "force-dynamic";
 
-export default function GraphPage() {
+type Params = Promise<{ entity?: string }>;
+
+export default async function GraphPage({ searchParams }: { searchParams: Params }) {
+  const { entity } = await searchParams;
   const { entities, relations } = getGraph(220);
   const paperLinks = getEntityPaperLinks(1500);
 
@@ -28,7 +31,7 @@ export default function GraphPage() {
         </div>
       </header>
 
-      <KnowledgeGraph entities={entities} relations={relations} paperLinks={paperLinks} />
+      <KnowledgeGraph entities={entities} relations={relations} paperLinks={paperLinks} initialEntityId={entity} />
 
       <div className="mt-6 rounded-xl border border-line bg-surface-2/60 px-4 py-3 text-[11px] leading-6 text-muted">
         <span className="font-medium text-ink-2">更新机制：</span>

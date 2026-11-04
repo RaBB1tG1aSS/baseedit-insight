@@ -13,6 +13,8 @@ const user = await import("@/server/db/repo/user");
 const jobs = await import("@/server/db/repo/jobs");
 const knowledge = await import("@/server/db/repo/knowledge");
 const settingsRepo = await import("@/server/db/repo/settings");
+const searchRepo = await import("@/server/db/repo/search");
+const insightsRepo = await import("@/server/db/repo/insights");
 const { getDb } = await import("@/server/db/client");
 
 afterAll(() => {
@@ -183,5 +185,63 @@ describe("central literature database", () => {
     expect(settings.minAcceptScore).toBe(77);
     expect(settings.schedulerEnabled).toBe(false);
     expect(settings.timezone).toBe("Asia/Singapore");
+  });
+
+  it("recommends unread papers from reading-history affinity", () => {
+    const liked = papers.insertPaper({
+      title: "LNP delivery of adenine base editors in vivo",
+      doi: "10.1000/personal.1",
+      status: "accepted",
+      verifiedAt: new Date().toISOString(),
+      qualityScore: 70,
+      publicationDate: "2025-01-01",
+      focusAreas: ["delivery", "editors"],
+    });
+    const affinityCandidate = papers.insertPaper({
+      title: "AAV delivery improves base editing in muscle",
+      doi: "10.1000/personal.2",
+      status: "accepted",
+      verifiedAt: new Date().toISOString(),
+      qualityScore: 72,
+      publicationDate: "2024-01-01",
+      focusAreas: ["delivery"],
+    });
+    papers.insertPaper({
+      title: "Unrelated high score paper",
+      doi: "10.1000/personal.3",
+      status: "accepted",
+      verifiedAt: new Date().toISOString(),
+      qualityScore: 90,
+      publicationDate: "2023-01-01",
+      focusAreas: ["field"],
+    });
+
+    user.setFavorite(liked.id, true);
+    user.setReadStatus(liked.id, "read");
+
+    const recommendations = papers.getPersonalizedRecommendations(5);
+    expect(recommendations.basis).toBe("history");
+    expect(recommendations.topAreas).toContain("递送技术");
+    expect(recommendations.items.map((item) => item.paper.id)).not.toContain(liked.id);
+    expect(recommendations.items.some((item) => item.paper.id === affinityCandidate.id)).toBe(true);
+  });
+
+  it("searches papers, entities and relations globally", () => {
+    const entity = searchRepo.globalSearch("Adenine");
+    expect(entity.entities.some((item) => item.name.includes("Adenine"))).toBe(true);
+
+    const relation = searchRepo.globalSearch("improves");
+    expect(relation.relations.length).toBeGreaterThan(0);
+
+    const papersResult = searchRepo.globalSearch("base editing");
+    expect(papersResult.papers.total).toBeGreaterThan(0);
+  });
+
+  it("aggregates insights without inventing trend claims", () => {
+    const insights = insightsRepo.getInsightsData();
+    expect(insights.accepted).toBeGreaterThan(0);
+    expect(insights.byYear.length).toBeGreaterThan(0);
+    expect(insights.focus.length).toBe(5);
+    expect(insights.personalized.items.length).toBeGreaterThan(0);
   });
 });

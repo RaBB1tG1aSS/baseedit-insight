@@ -103,10 +103,12 @@ export function KnowledgeGraph({
   entities,
   relations,
   paperLinks,
+  initialEntityId,
 }: {
   entities: KnowledgeEntity[];
   relations: KnowledgeRelation[];
   paperLinks: EntityPaperLink[];
+  initialEntityId?: string;
 }) {
   const [activeTypes, setActiveTypes] = useState<Set<EntityType>>(
     () => new Set(entities.map((entity) => entity.type)),
@@ -115,6 +117,7 @@ export function KnowledgeGraph({
   const [sinceYear, setSinceYear] = useState(0);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<GNode | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
   const [hovered, setHovered] = useState<GNode | null>(null);
   const [size, setSize] = useState({ width: 900, height: 620 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -235,6 +238,42 @@ export function KnowledgeGraph({
     return { graphData: { nodes, links }, nodeMap };
   }, [entities, relations, paperLinks, activeTypes, visibleEntityIds, showPapers, sinceYear, paperMeta]);
 
+  const displayGraph = useMemo(() => {
+    if (!focusMode || !selected) return graphData;
+    const keep = new Set<string>([selected.id]);
+    const endpoint = (value: string | GNode) => (typeof value === "string" ? value : value.id);
+    for (const link of graphData.links) {
+      const source = endpoint(link.source as string | GNode);
+      const target = endpoint(link.target as string | GNode);
+      if (source === selected.id) keep.add(target);
+      if (target === selected.id) keep.add(source);
+    }
+    return {
+      nodes: graphData.nodes.filter((node) => keep.has(node.id)),
+      links: graphData.links.filter((link) => {
+        const source = endpoint(link.source as string | GNode);
+        const target = endpoint(link.target as string | GNode);
+        return keep.has(source) && keep.has(target);
+      }),
+    };
+  }, [graphData, focusMode, selected]);
+
+  const initialHandled = useRef(false);
+  useEffect(() => {
+    if (!initialEntityId || initialHandled.current) return;
+    const node = nodeMap.get(`e:${initialEntityId}`);
+    if (!node) return;
+    initialHandled.current = true;
+    setSelected(node);
+    const timer = setTimeout(() => {
+      if (node.x != null && node.y != null) {
+        graphRef.current?.centerAt?.(node.x, node.y, 800);
+      }
+      graphRef.current?.zoom?.(2.2, 700);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [initialEntityId, nodeMap]);
+
   const queryMatches = useMemo(() => {
     const value = query.trim().toLowerCase();
     if (!value) return null;
@@ -262,6 +301,7 @@ export function KnowledgeGraph({
     setSinceYear(0);
     setQuery("");
     setSelected(null);
+    setFocusMode(false);
     graphRef.current?.zoomToFit?.(500, 70);
   };
 
@@ -367,9 +407,10 @@ export function KnowledgeGraph({
             );
           })}
           <span className="ml-auto text-[10px] text-faint">
-            {graphData.nodes.filter((node) => node.kind === "entity").length} 个实体 ·{" "}
-            {graphData.links.filter((link) => link.kind === "relation").length} 条关系 ·{" "}
-            {graphData.nodes.filter((node) => node.kind === "paper").length} 篇论文
+            {displayGraph.nodes.filter((node) => node.kind === "entity").length} 个实体 ·{" "}
+            {displayGraph.links.filter((link) => link.kind === "relation").length} 条关系 ·{" "}
+            {displayGraph.nodes.filter((node) => node.kind === "paper").length} 篇论文
+            {focusMode ? " · 聚焦模式" : ""}
           </span>
         </div>
       </div>
@@ -386,7 +427,7 @@ export function KnowledgeGraph({
           </div>
           <ForceGraph2D
             ref={graphRef}
-            graphData={graphData}
+            graphData={displayGraph}
             width={size.width}
             height={size.height}
             backgroundColor="transparent"
@@ -470,6 +511,20 @@ export function KnowledgeGraph({
                   关闭
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setFocusMode((value) => !value)}
+                className={cx(
+                  "mt-2 inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-[10px] transition",
+                  focusMode
+                    ? "border-accent/30 bg-accent-soft text-accent-ink"
+                    : "border-line bg-surface text-muted hover:text-ink",
+                )}
+              >
+                <Network size={10} />
+                {focusMode ? "显示全部节点" : "只看该节点邻居"}
+              </button>
 
               {selected.kind === "paper" ? (
                 <div className="mt-3 space-y-2 text-[11.5px] text-muted">
