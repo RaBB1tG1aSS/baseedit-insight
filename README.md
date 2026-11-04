@@ -119,12 +119,30 @@ npm run dev:all
 
 > **Worker 必须运行。** 检索、核验、精讲、周报都是后台任务；只启动 Web 时任务会停在队列里。关闭浏览器不影响定时任务，关闭 Worker 才会。
 
-### Windows 一键启动
+### Windows 一键启动（静默后台）
 
-仓库根目录提供：
+仓库提供无控制台窗口的启动方式：
 
-- `Start-BaseEdit-Insight.cmd`：检查端口、必要时构建、启动 Web + Worker 并打开浏览器；
-- `Stop-BaseEdit-Insight.cmd`：停止两个进程。
+1. 首次运行一次快捷方式安装脚本（PowerShell）：
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File ./Install-BaseEdit-Shortcuts.ps1
+   ```
+
+2. 桌面会生成两个快捷方式：
+
+   - **BaseEdit Insight**：后台启动 Web + Worker（无 cmd 窗口），等待健康检查通过后自动打开浏览器；
+   - **BaseEdit Insight - Stop**：停止 Web 与 Worker。
+
+启动日志写入：
+
+- `data/prod-server.log`
+- `data/worker.log`
+- `data/launcher.log`
+
+底层入口是 `Start-BaseEdit-Insight.vbs` / `Stop-BaseEdit-Insight.vbs`（调用同名 PowerShell 脚本）。
+
+> 如果希望直接看到两个日志窗口，仍可使用 `Start-BaseEdit-Insight.cmd` / `Stop-BaseEdit-Insight.cmd`。
 
 ### 第一次使用
 

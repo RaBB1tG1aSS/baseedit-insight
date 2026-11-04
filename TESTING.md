@@ -155,6 +155,7 @@ Playwright/Chrome 实测结果（截图在 `data/screens/`，JSON 为 `qa-report
 - **论文对比** `/compare?ids=…`：2 篇并排比较，主要结果/创新/局限/数据字段完整。
 - **对比浮层**：文献库点击「对比」后出现「已选 1 篇论文」浮层，可清空，localStorage 行为正常。
 - 移动端（390×844）：`/`、`/papers`、`/papers/[id]`、`/insights`、`/search`、`/compare` 横向溢出均为 0px。
+- Windows 静默启动器：Stop 后健康检查为 000；`Start-BaseEdit-Insight.ps1 -NoBrowser` 静默启动后健康检查 200、worker 在线；桌面快捷方式目标为 `wscript.exe` + `Start-BaseEdit-Insight.vbs`，图标为 `assets/baseedit.ico`。
 
 > 未验证项不会标记为通过；见第 7 节。
 
