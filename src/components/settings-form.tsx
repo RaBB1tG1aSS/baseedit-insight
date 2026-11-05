@@ -331,18 +331,20 @@ export function SettingsForm({
         <div className="rounded-lg border border-line bg-bg-elevated p-3">
           <div className="mb-2 text-[11px] font-medium text-ink-2">导入 JCR / 自定义期刊指标 CSV</div>
           <p className="mb-2 text-[10px] leading-5 text-faint">
-            需要列：Journal（或 Title）、Impact Factor（或 JIF）、ISSN（可选）、Year（可选）。CSV 只在本地解析入库，不上传第三方。
+            需要列：Journal（或 Title）、Impact Factor（或 JIF）、ISSN（可选）、Year（可选）。可一次选择多个 JCR 导出文件，系统会合并去重；CSV 只在本地解析入库，不上传第三方。
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="file"
               accept=".csv,.tsv,.txt"
+              multiple
               onChange={async (event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                setCsv(await file.text());
+                const files = Array.from(event.target.files ?? []);
+                if (!files.length) return;
+                const texts = await Promise.all(files.map((file) => file.text()));
+                setCsv(texts.join(String.fromCharCode(10)));
                 setImportState("idle");
-                setImportMessage(`已读取 ${file.name}`);
+                setImportMessage(`已读取 ${files.length} 个文件，导入时会按 ISSN/刊名去重合并`);
               }}
               className="max-w-full text-[10.5px] text-muted file:mr-2 file:rounded-full file:border-0 file:bg-accent-soft file:px-3 file:py-1 file:text-[10.5px] file:text-accent-ink"
             />
