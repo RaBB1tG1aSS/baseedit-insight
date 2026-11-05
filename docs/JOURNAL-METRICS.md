@@ -6,6 +6,54 @@ BaseEdit Insight 支持按期刊影响力筛选论文，但**不内置、不抓�
 
 ---
 
+## 0. 如何合法获取 JCR CSV
+
+### 方式 A：机构订阅（最常见、推荐）
+
+JCR 本身需要机构订阅，匿名访问会跳转到登录页。一般路径：
+
+1. 从学校/研究所图书馆的数据库列表进入 **Journal Citation Reports**，使用校园网、VPN、Shibboleth 或 OpenAthens 登录；
+2. 选择年份（例如 2026 年发布的 JCR）；
+3. 按学科类别、出版社、ISSN 或期刊名筛选（碱基编辑常用类别：Genetics & Heredity、Biotechnology & Applied Microbiology、Cell Biology、Medicine Research & Experimental、Hematology）；
+4. 勾选期刊后使用 **Export / 导出**，选择 **CSV / Excel**，包含 Journal、JIF、JIF Quartile、JCI、Category、ISSN 等字段；
+5. 单次导出通常有数量上限（常见为 500 条，具体以你机构界面为准）；超过时按学科/年份/出版社分批导出；
+6. 保存为 CSV，在 BaseEdit Insight 设置页导入。
+
+可参考的官方/机构页面：
+
+- Clarivate JCR 产品页：<https://clarivate.com/academia-government/scientific-and-academic-research/research-funding-analytics/journal-citation-reports/>
+- JCR 平台：<https://jcr.clarivate.com/jcr/home>
+- JCR 注册/登录说明：<https://journalcitationreports.zendesk.com/hc/en-gb/articles/28351249405329-Registration-and-Signing-into-Journal-Citation-Reports>
+- 机构访问示例（华东师范大学图书馆）：<https://lib.ecnu.edu.cn/91/48/c38585a495944/page.htm>
+
+如果学校没有订阅，可以请图书馆/科研管理部门提供其订阅的 JCR 导出文件，或使用下面方式 B。
+
+### 方式 B：Clarivate Web of Science Journals API（付费）
+
+Clarivate 提供官方的 **Web of Science Journals API**，可直接获取 JCR 收录期刊的 JIF 等指标，JSON 输出，速率上限 5 请求/秒；需要 JCR / InCites 的付费附加许可并在 Developer Portal 注册应用：
+
+- <https://developer.clarivate.com/apis/wos-journal>
+
+如果你有该 API Key，我可以再给 BaseEdit Insight 加一个 API 导入器（目前是 CSV 导入）。
+
+### 方式 C：出版社/期刊官网逐个查看
+
+很多期刊官网会显示自己的 JIF。适合少量补充，不适合批量抓取；请遵守网站条款，不要用脚本抓取。
+
+### 不要使用
+
+知乎、CSDN、GitHub 上流传的「JCR 完整版下载」「2026 影响因子总表」以及第三方查询站，很多是未授权抓取或二次整理，数据准确性和许可都无法保证，也不适合导入正式科研工具。
+
+### 免费替代指标（都不是 JCR IF）
+
+- **OpenAlex 2yr mean citedness / h-index**：免费 API，系统已接入并自动刷新；<https://docs.openalex.org/api-entities/sources/source-object>
+- **CWTS Journal Indicators（SNIP / IPP）**：Leiden University 免费提供，覆盖 2 万多种 Scopus 期刊，可下载 Excel；<https://www.journalindicators.com/downloads>
+- **SCImago Journal Rank（SJR）**：免费下载期刊排名表；<https://www.scimagojr.com/journalrank.php>
+- **Google Scholar Metrics h5-index**：可手动查看，适合补充。
+
+这些指标的计算方式和量纲与 JIF 不同，界面必须按实际来源标注，不能改名为 Impact Factor。
+
+
 ## 1. 三种指标来源
 
 | 来源 | 说明 | 获取方式 |
