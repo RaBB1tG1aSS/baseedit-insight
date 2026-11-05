@@ -78,6 +78,7 @@ const JOB_LABEL: Record<JobType, string> = {
   reanalyze_paper: "重新分析",
   knowledge_update: "知识图谱更新",
   reverify_paper: "重新核验",
+  journal_metrics_refresh: "刷新期刊指标",
   status_watch: "状态复查",
 };
 

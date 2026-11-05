@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ArrowLeft, Download, GitCompare, Trash2 } from "lucide-react";
 import type { DeepReadContent, Paper } from "@/lib/types";
 import { formatDate } from "@/lib/format";
+import { metricPrefix } from "@/lib/journal-metric";
 import { getAcceptedPaperById } from "@/server/db/repo/papers";
 import { getFigures, getFullText, getLatestAnalysis, getQualityAssessment } from "@/server/db/repo/analysis";
 import { PrintButton } from "@/components/print-button";
@@ -141,6 +142,11 @@ export default async function ComparePage({ searchParams }: { searchParams: Para
               <div className="mt-1.5 flex flex-wrap items-center gap-1">
                 <Badge variant="outline">{column.paper.journal ?? "未知期刊"}</Badge>
                 <Badge variant="outline">{formatDate(column.paper.publicationDate)}</Badge>
+                {column.paper.journalMetric != null ? (
+                  <Badge variant="outline">
+                    {metricPrefix(column.paper.journalMetricSource)} {column.paper.journalMetric.toFixed(1)}
+                  </Badge>
+                ) : null}
                 {column.level ? (
                   <Badge variant={column.level === "full_text" ? "success" : "warn"}>
                     {column.level === "full_text" ? "全文级" : "摘要级"}

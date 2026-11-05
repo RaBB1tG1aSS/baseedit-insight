@@ -29,7 +29,7 @@ interface EpmcResult {
   authorString?: string;
   authorList?: { author?: EpmcAuthor[] };
   journalInfo?: {
-    journal?: { title?: string; medlineAbbreviation?: string; isoabbreviation?: string };
+    journal?: { title?: string; medlineAbbreviation?: string; isoabbreviation?: string; issn?: string; essn?: string };
     yearOfPublication?: number;
     printPublicationDate?: string;
     dateOfPublication?: string;
@@ -106,6 +106,7 @@ function mapRecord(record: EpmcResult): SourceRecord | null {
       .map((author) => author.fullName || [author.firstName, author.lastName].filter(Boolean).join(" ") || author.collectiveName || "")
       .filter(Boolean),
     journal,
+    issn: record.journalInfo?.journal?.issn ?? record.journalInfo?.journal?.essn ?? null,
     publicationDate,
     onlinePublicationDate: toIsoDate(record.electronicPublicationDate),
     articleType: pickArticleType(pubTypes),

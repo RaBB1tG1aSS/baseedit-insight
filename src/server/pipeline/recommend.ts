@@ -2,6 +2,7 @@ import type { AppSettings, DailyRecommendation, DeepReadContent, Paper } from "@
 import { FOCUS_LABEL } from "@/lib/constants";
 import {
   getAcceptedPapersWithoutRecommendation,
+  getPaperById,
   updatePaper,
 } from "../db/repo/papers";
 import { getLatestAnalysis } from "../db/repo/analysis";
@@ -11,6 +12,7 @@ import {
 } from "../db/repo/knowledge";
 import { addDays, diffDays } from "../utils/time";
 import { truncate } from "../utils/normalize";
+import { paperPassesJournalMetric } from "../metrics/journals";
 
 export interface RecommendationResult {
   created: boolean;
@@ -48,12 +50,15 @@ export function createDailyRecommendation(params: {
 }): RecommendationResult {
   const existing = getRecommendationForDate(params.date);
   if (existing) {
-    return { created: false, recommendation: existing, reason: "今日推荐已存在" };
+    const existingPaper = getPaperById(existing.paperId);
+    if (existingPaper && paperPassesJournalMetric(existingPaper, params.settings)) {
+      return { created: false, recommendation: existing, reason: "今日推荐已存在" };
+    }
   }
 
-  const candidates = getAcceptedPapersWithoutRecommendation().filter(
-    (paper) => (paper.qualityScore ?? 0) >= params.settings.minAcceptScore,
-  );
+  const candidates = getAcceptedPapersWithoutRecommendation()
+    .filter((paper) => (paper.qualityScore ?? 0) >= params.settings.minAcceptScore)
+    .filter((paper) => paperPassesJournalMetric(paper, params.settings));
   const peerReviewed = candidates.filter((paper) => paper.peerReviewStatus !== "preprint");
 
   const latestPool = peerReviewed.filter((paper) => {

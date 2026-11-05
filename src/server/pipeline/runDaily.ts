@@ -24,6 +24,12 @@ import { gateDecision } from "./gate";
 import { ingestCandidate, ingestPrefilterRejection } from "./ingest";
 import { createDailyRecommendation } from "./recommend";
 import { updateRecommendationCopy } from "../db/repo/knowledge";
+import {
+  applyJournalMetricToPaper,
+  ensureOpenAlexJournalMetric,
+  findJournalMetric,
+  type ResolvedJournalMetric,
+} from "../metrics/journals";
 import { fetchAndStoreFullText } from "../fulltext/europepmc";
 import { generateDeepRead } from "../ai/deepRead";
 import { generateFigureAnalysis } from "../ai/figureRead";
@@ -294,6 +300,9 @@ export async function runDailyPipeline(options: DailyRunOptions = {}): Promise<D
   let rejectedCount = 0;
   let reviewCount = 0;
   let failedCount = 0;
+  const metricCache = new Map<string, ResolvedJournalMetric | null>();
+  const metricFilterActive =
+    settings.journalMetricMode !== "off" && settings.minJournalMetric > 0;
 
   for (let index = 0; index < queue.length; index += 1) {
     const { candidate, relevance } = queue[index];
@@ -303,6 +312,47 @@ export async function runDailyPipeline(options: DailyRunOptions = {}): Promise<D
         onLog: (level, message) => logger.log(level, "verify", message),
       });
       if (verification.identityVerified) verifiedCount += 1;
+
+      const candidateForMetric = verification.candidate;
+      const metricKey = `${candidateForMetric.journal ?? ""}|${candidateForMetric.issn ?? ""}`;
+      let journalMetric = metricCache.get(metricKey);
+      if (journalMetric === undefined) {
+        journalMetric = findJournalMetric(
+          { journal: candidateForMetric.journal, issn: candidateForMetric.issn },
+          settings.journalMetricMode,
+        );
+        if (
+          !journalMetric &&
+          metricFilterActive &&
+          (settings.journalMetricMode === "openalex" || settings.journalMetricMode === "auto")
+        ) {
+          journalMetric = await ensureOpenAlexJournalMetric({
+            journal: candidateForMetric.journal,
+            issn: candidateForMetric.issn,
+          });
+        }
+        metricCache.set(metricKey, journalMetric);
+      }
+
+      if (metricFilterActive) {
+        verification.checks.push({
+          checkItem: "期刊影响力",
+          result: journalMetric
+            ? journalMetric.value >= settings.minJournalMetric
+              ? "pass"
+              : "fail"
+            : settings.journalMetricUnknown === "reject"
+              ? "fail"
+              : "warning",
+          evidenceSource: journalMetric?.source ?? settings.journalMetricMode,
+          evidence: journalMetric
+            ? `${journalMetric.value} (${journalMetric.source}, ${journalMetric.year})`
+            : null,
+          notes: journalMetric
+            ? `低于门槛时排除；当前门槛 ${settings.minJournalMetric}`
+            : `未匹配到期刊指标；未知期刊策略：${settings.journalMetricUnknown}`,
+        });
+      }
 
       const quality = scoreQuality({
         candidate: verification.candidate,
@@ -316,6 +366,7 @@ export async function runDailyPipeline(options: DailyRunOptions = {}): Promise<D
         settings,
         articleType: verification.candidate.articleType,
         title: verification.candidate.title,
+        journalMetric,
       });
 
       const ingest = ingestCandidate({
@@ -327,6 +378,8 @@ export async function runDailyPipeline(options: DailyRunOptions = {}): Promise<D
         settings,
       });
 
+      applyJournalMetricToPaper(ingest.paperId, journalMetric);
+
       if (ingest.status === "accepted") {
         acceptedCount += 1;
         accepted.push(ingest.paperId);
@@ -336,7 +389,7 @@ export async function runDailyPipeline(options: DailyRunOptions = {}): Promise<D
       logger.log(
         gate.status === "accepted" ? "info" : "warn",
         "verify",
-        `${gate.status.toUpperCase()} | ${quality.total}/100 | 相关性 ${relevance.score} | ${label}`,
+        `${gate.status.toUpperCase()} | ${quality.total}/100 | 相关性 ${relevance.score}${journalMetric ? ` | 期刊指标 ${journalMetric.value}` : ""} | ${label}`,
         {
           paperId: ingest.paperId,
           created: ingest.created,

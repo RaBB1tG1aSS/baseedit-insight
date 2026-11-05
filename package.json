@@ -19,7 +19,9 @@
     "db:repair-text": "tsx scripts/repair-text.ts",
     "db:repair-access": "tsx scripts/repair-access.ts",
     "db:reverify": "tsx scripts/reverify-all.ts",
-    "db:translate-titles": "tsx scripts/translate-missing.ts"
+    "db:translate-titles": "tsx scripts/translate-missing.ts",
+    "metrics:refresh": "tsx scripts/refresh-journal-metrics.ts",
+    "metrics:import": "tsx scripts/import-journal-metrics.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

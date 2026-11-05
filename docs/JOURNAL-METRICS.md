@@ -1,0 +1,128 @@
+# 期刊影响力筛选
+
+BaseEdit Insight 支持按期刊影响力筛选论文，但**不内置、不抓取、不分发 Clarivate JCR 影响因子**。JCR 是授权数据，需由你所在机构导出后本地导入。
+
+同时提供 **OpenAlex 2-year mean citedness** 作为公开的引用指标替代；它不是 Impact Factor，界面中始终标记为 `2yr`，不会伪装成 IF。
+
+---
+
+## 1. 三种指标来源
+
+| 来源 | 说明 | 获取方式 |
+| --- | --- | --- |
+| `jcr` | Clarivate Journal Citation Reports 的 Journal Impact Factor | 机构订阅导出 CSV，手动导入 |
+| `custom` | 你维护的自定义期刊指标/白名单分数 | 手动导入 CSV |
+| `openalex` | OpenAlex `2yr_mean_citedness`（开放引用指标） | 设置页点击「刷新 OpenAlex 指标」 |
+
+设置页「期刊影响力筛选」中可选择：
+
+- **关闭**：不按期刊指标筛选；
+- **JCR 影响因子（导入）**：只使用你导入的 JCR 数据；
+- **OpenAlex 2yr citedness**：使用 OpenAlex 开放指标；
+- **优先 JCR，缺失用 OpenAlex**：先查 JCR，缺失时回退 OpenAlex。
+
+> OpenAlex 的 2yr citedness 与 JCR IF 计算方式不同，部分期刊数值可能异常（例如 Journal of Hepatology 在 OpenAlex 中约 2.8，但 JCR IF 远高于此）。把它当作辅助信号，不建议直接用高阈值硬筛。
+>
+> 默认配置是 **auto + 1.0**：优先 JCR（未导入则回退 OpenAlex），只排除指标明显很低或缺失但被标记为未知的期刊；导入 JCR 后可把门槛提高到 5–10。
+
+---
+
+## 2. 导入 JCR 影响因子
+
+### 2.1 从 JCR 导出
+
+在机构订阅的 Journal Citation Reports 中：
+
+1. 选择年份（例如 2025 JCR）；
+2. 选择需要筛选的学科/期刊集合；
+3. 导出 CSV / Excel（不同版本菜单名称可能不同）；
+4. 保存为 CSV。
+
+系统可识别以下列（大小写不敏感）：
+
+| 字段 | 可接受的列名 |
+| --- | --- |
+| 期刊名 | `Journal` / `Journal name` / `Title` / `Full Journal Title` |
+| 影响因子 | `Impact Factor` / `Journal Impact Factor` / `JIF` / `2024 JIF` / `2025 JIF` |
+| ISSN（可选） | `ISSN` / `Print ISSN` |
+| eISSN（可选） | `eISSN` / `Online ISSN` |
+| 年份（可选） | `Year` / `JCR Year` / `Metric Year` |
+
+示例（请填入你自己的真实数据）：
+
+```csv
+Journal,ISSN,Impact Factor,Year
+Nature,0028-0836,50.5,2025
+Nature Biotechnology,1087-0156,33.1,2025
+```
+
+### 2.2 导入方式
+
+**界面（推荐）**：设置 → 期刊影响力筛选 → 选择 CSV 文件或直接粘贴 → 选择 `JCR IF` 与年份 → 点击「导入指标 CSV」。
+
+**命令行**：
+
+```bash
+npm run metrics:import -- "C:\path\to\jcr-2025.csv" --year=2025 --source=jcr
+```
+
+导入文件只在本地解析并写入 SQLite，不会上传到任何第三方服务。请不要把 JCR 导出文件提交到 Git 仓库。
+
+### 2.3 设置门槛
+
+| 设置 | 作用 |
+| --- | --- |
+| 最低指标 | 低于该值的论文不进入正式推荐；0 表示不启用 |
+| 未知期刊处理 | `允许`：缺少指标也保留；`排除`：只接受有指标期刊 |
+
+示例：
+
+- JCR 模式，最低 `5`，未知期刊 `允许`：有 IF 且 ≥5 的期刊论文入库；没有导入 IF 的期刊不因缺少数据被排除；
+- JCR 模式，最低 `10`，未知期刊 `排除`：只接受已导入且 IF ≥10 的期刊，适合严格精选；
+- OpenAlex 模式，最低 `5`：使用开放指标，不建议设得过高。
+
+---
+
+## 3. 筛选发生在哪里
+
+1. **新候选入库**：每日流水线在质量门槛之外增加「期刊影响力」检查；低于阈值或按策略排除的候选进入拒绝区，并写入核验记录；
+2. **每日推荐**：已入库论文若指标低于当前门槛，不会被今日推荐选中；
+3. **文献库**：可按「期刊指标 ≥」筛选，卡片显示 `IF 8.2` 或 `2yr 5.6` 徽标；
+4. **论文页**：侧栏显示指标来源与年份；
+5. **对比页**：显示各论文的期刊指标。
+
+指标只影响筛选与推荐，不会改写论文元数据或伪造数值。
+
+---
+
+## 4. 刷新 OpenAlex 指标
+
+设置页 →「刷新 OpenAlex 指标」，或：
+
+```bash
+npm run metrics:refresh
+```
+
+系统会：
+
+- 遍历中央库中出现过的期刊；
+- 调用 OpenAlex Sources API 获取 `summary_stats.2yr_mean_citedness`；
+- 按 ISSN/刊名匹配并缓存到 `journal_metrics`；
+- 把最佳指标写回论文记录。
+
+该任务在后台 worker 中执行，可在 Agent 页面查看日志。
+
+---
+
+## 5. 数据与审计
+
+`journal_metrics` 表保存：
+
+- 期刊名、标准化名、ISSN/eISSN；
+- 指标来源（jcr/openalex/custom）；
+- 指标年份；
+- 指标值；
+- 导入原始行（`raw_json`）；
+- 创建/更新时间。
+
+论文记录保存最终采用的 `journal_metric`、来源和年份。核验记录中会新增「期刊影响力」检查项，失败原因可追溯。

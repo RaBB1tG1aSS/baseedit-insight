@@ -36,6 +36,10 @@ export interface PaperInput {
   titleZh?: string | null;
   authors?: string[];
   journal?: string | null;
+  journalIssn?: string | null;
+  journalMetric?: number | null;
+  journalMetricSource?: string | null;
+  journalMetricYear?: number | null;
   publicationDate?: string | null;
   onlinePublicationDate?: string | null;
   articleType?: string | null;
@@ -68,6 +72,10 @@ export type PaperPatch = Partial<{
   title_zh: string | null;
   authors_json: string;
   journal: string | null;
+  journal_issn: string | null;
+  journal_metric: number | null;
+  journal_metric_source: string | null;
+  journal_metric_year: number | null;
   publication_date: string | null;
   online_publication_date: string | null;
   article_type: string | null;
@@ -163,13 +171,13 @@ export function insertPaper(input: PaperInput): Paper {
   db.prepare(
     `INSERT INTO papers (
       id, doi, pmid, pmcid, openalex_id, semantic_scholar_id, title, title_key, title_zh,
-      authors_json, journal, publication_date, online_publication_date, article_type,
+      authors_json, journal, journal_issn, journal_metric, journal_metric_source, journal_metric_year, publication_date, online_publication_date, article_type,
       abstract, keywords_json, official_url, peer_review_status, publication_status,
       retraction_status, retraction_note, full_text_access_status, full_text_license,
       quality_score, quality_summary, recommendation_category, focus_areas_json,
       citation_count, status, verified_at, created_at, updated_at
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     )`,
   ).run(
     id,
@@ -183,6 +191,10 @@ export function insertPaper(input: PaperInput): Paper {
     input.titleZh ?? null,
     JSON.stringify(input.authors ?? []),
     input.journal ?? null,
+    input.journalIssn ?? null,
+    input.journalMetric ?? null,
+    input.journalMetricSource ?? null,
+    input.journalMetricYear ?? null,
     input.publicationDate ?? null,
     input.onlinePublicationDate ?? null,
     input.articleType ?? null,
@@ -311,6 +323,10 @@ function buildSearchWhere(filters: SearchFilters): { where: string; params: unkn
   if (filters.minScore != null) {
     where.push("p.quality_score >= ?");
     params.push(filters.minScore);
+  }
+  if (filters.minJournalMetric != null) {
+    where.push("p.journal_metric >= ?");
+    params.push(filters.minJournalMetric);
   }
   if (filters.favorite) {
     where.push("COALESCE(u.favorite, 0) = 1");

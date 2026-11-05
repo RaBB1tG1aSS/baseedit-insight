@@ -10,6 +10,12 @@ import { ingestCandidate } from "./ingest";
 import { getSettings } from "../db/repo/settings";
 import { env } from "../env";
 import type { SourceRecord, SourceName } from "../sources/types";
+import {
+  applyJournalMetricToPaper,
+  ensureOpenAlexJournalMetric,
+  findJournalMetric,
+  type ResolvedJournalMetric,
+} from "../metrics/journals";
 
 function recordFromPaper(paper: Paper, source: SourceName): SourceRecord {
   return {
@@ -23,6 +29,7 @@ function recordFromPaper(paper: Paper, source: SourceName): SourceRecord {
     title: paper.title,
     authors: paper.authors,
     journal: paper.journal,
+    issn: paper.journalIssn,
     publicationDate: paper.publicationDate,
     onlinePublicationDate: paper.onlinePublicationDate,
     articleType: paper.articleType,
@@ -73,6 +80,42 @@ export async function reverifyPaper(paperId: string): Promise<ReverifyResult> {
       enableSemanticScholar: settings.enableSemanticScholar,
     },
   );
+  const metricFilterActive =
+    settings.journalMetricMode !== "off" && settings.minJournalMetric > 0;
+  let journalMetric: ResolvedJournalMetric | null = findJournalMetric(
+    { journal: verification.candidate.journal, issn: verification.candidate.issn },
+    settings.journalMetricMode,
+  );
+  if (
+    !journalMetric &&
+    metricFilterActive &&
+    (settings.journalMetricMode === "openalex" || settings.journalMetricMode === "auto")
+  ) {
+    journalMetric = await ensureOpenAlexJournalMetric({
+      journal: verification.candidate.journal,
+      issn: verification.candidate.issn,
+    });
+  }
+  if (metricFilterActive) {
+    verification.checks.push({
+      checkItem: "期刊影响力",
+      result: journalMetric
+        ? journalMetric.value >= settings.minJournalMetric
+          ? "pass"
+          : "fail"
+        : settings.journalMetricUnknown === "reject"
+          ? "fail"
+          : "warning",
+      evidenceSource: journalMetric?.source ?? settings.journalMetricMode,
+      evidence: journalMetric
+        ? `${journalMetric.value} (${journalMetric.source}, ${journalMetric.year})`
+        : null,
+      notes: journalMetric
+        ? `当前门槛 ${settings.minJournalMetric}`
+        : `未匹配到期刊指标；未知期刊策略：${settings.journalMetricUnknown}`,
+    });
+  }
+
   const quality = scoreQuality({
     candidate: verification.candidate,
     relevance,
@@ -85,6 +128,7 @@ export async function reverifyPaper(paperId: string): Promise<ReverifyResult> {
     settings,
     articleType: verification.candidate.articleType,
     title: verification.candidate.title,
+    journalMetric,
   });
 
   const result = ingestCandidate({
@@ -95,6 +139,8 @@ export async function reverifyPaper(paperId: string): Promise<ReverifyResult> {
     status: gate.status,
     settings,
   });
+
+  applyJournalMetricToPaper(result.paperId, journalMetric);
 
   return {
     paperId,

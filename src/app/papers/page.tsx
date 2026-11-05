@@ -24,6 +24,12 @@ function positiveInt(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
 }
 
+function positiveNumber(value: string | undefined): number | undefined {
+  if (value == null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
 export default async function PapersPage({ searchParams }: { searchParams: Params }) {
   const raw = await searchParams;
   const q = one(raw.q)?.trim();
@@ -40,6 +46,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
   const readStatus = readRaw === "unread" || readRaw === "reading" || readRaw === "read" ? readRaw : undefined;
   const favorite = one(raw.favorite) === "1";
   const minScore = positiveInt(one(raw.minScore));
+  const minMetric = positiveNumber(one(raw.minMetric));
   const sortRaw = one(raw.sort);
   const sort = (SORTS as readonly string[]).includes(sortRaw ?? "") ? (sortRaw as (typeof SORTS)[number]) : "score";
   const page = Math.max(1, positiveInt(one(raw.page)) ?? 1);
@@ -55,6 +62,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
     readStatus,
     favorite: favorite || undefined,
     minScore,
+    minJournalMetric: minMetric,
     sort,
     page,
     pageSize: 12,
@@ -79,6 +87,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
       read: readStatus,
       favorite: favorite ? "1" : undefined,
       minScore,
+      minMetric,
       sort,
       page,
       ...overrides,
@@ -101,6 +110,7 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
   if (readStatus) activeChips.push({ label: readStatus === "unread" ? "未读" : readStatus === "reading" ? "在读" : "已读", remove: buildQuery({ read: undefined, page: 1 }) });
   if (favorite) activeChips.push({ label: "收藏", remove: buildQuery({ favorite: undefined, page: 1 }) });
   if (minScore) activeChips.push({ label: `评分 ≥ ${minScore}`, remove: buildQuery({ minScore: undefined, page: 1 }) });
+  if (minMetric != null) activeChips.push({ label: `期刊指标 ≥ ${minMetric}`, remove: buildQuery({ minMetric: undefined, page: 1 }) });
 
   const pageWindow: number[] = [];
   for (let index = Math.max(1, page - 2); index <= Math.min(totalPages, page + 2); index += 1) pageWindow.push(index);
@@ -189,6 +199,17 @@ export default async function PapersPage({ searchParams }: { searchParams: Param
                   </select>
                 </Field>
               </div>
+              <Field label="期刊指标 ≥（JCR IF / OpenAlex 2yr）">
+                <input
+                  name="minMetric"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  defaultValue={minMetric ?? ""}
+                  placeholder="不限，例如 5"
+                  className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-[12px] text-ink placeholder:text-faint focus:border-accent/50 focus:outline-none"
+                />
+              </Field>
               <Field label="研究方向">
                 <select name="focus" defaultValue={focus ?? ""} className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-[12px] text-ink focus:border-accent/50 focus:outline-none">
                   <option value="">全部方向</option>

@@ -38,6 +38,14 @@
 
 ---
 
+## 扩展：期刊影响力筛选（本轮新增）
+
+- **JCR IF 导入**：设置页 CSV 导入 / `npm run metrics:import`；授权数据只在本地保存，不内置、不分发。
+- **OpenAlex 2yr citedness**：`npm run metrics:refresh` 或设置页后台任务；明确标注不是 IF。
+- **筛选落点**：新候选入库门槛、每日推荐过滤、文献库 `minMetric` 筛选、论文/对比页指标徽标。
+- **数据表**：`journal_metrics` + papers 的 `journal_metric*` 字段，迁移 `0002_journal_metrics`。
+- **文档**：[JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md)。
+
 ## 本轮新增内容
 
 - **全局搜索**：新增 `repo/search.ts` 与服务端聚合查询，覆盖论文、实体、关系、时间线、周报；顶栏搜索跳转 `/search`。

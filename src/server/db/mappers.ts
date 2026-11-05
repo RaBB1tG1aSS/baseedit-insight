@@ -8,6 +8,7 @@ import type {
   PublicationStatus,
   RecommendationCategory,
   RetractionStatus,
+  JournalMetricSource,
   UserRecord,
 } from "@/lib/types";
 
@@ -41,6 +42,10 @@ export interface PaperRow extends Row {
   title_zh: string | null;
   authors_json: string;
   journal: string | null;
+  journal_issn: string | null;
+  journal_metric: number | null;
+  journal_metric_source: string | null;
+  journal_metric_year: number | null;
   publication_date: string | null;
   online_publication_date: string | null;
   article_type: string | null;
@@ -78,6 +83,10 @@ export function mapPaper(row: PaperRow): Paper {
     titleZh: row.title_zh,
     authors: parseJson<string[]>(row.authors_json, []),
     journal: row.journal,
+    journalIssn: row.journal_issn,
+    journalMetric: num(row.journal_metric),
+    journalMetricSource: (row.journal_metric_source as JournalMetricSource | null) ?? null,
+    journalMetricYear: num(row.journal_metric_year),
     publicationDate: row.publication_date,
     onlinePublicationDate: row.online_publication_date,
     articleType: row.article_type,
@@ -113,6 +122,10 @@ export function mapPaperSummary(row: PaperRow & { user_favorite?: unknown }): Pa
     titleZh: row.title_zh,
     authors: parseJson<string[]>(row.authors_json, []),
     journal: row.journal,
+    journalIssn: row.journal_issn,
+    journalMetric: num(row.journal_metric),
+    journalMetricSource: (row.journal_metric_source as JournalMetricSource | null) ?? null,
+    journalMetricYear: num(row.journal_metric_year),
     publicationDate: row.publication_date,
     articleType: row.article_type,
     peerReviewStatus: row.peer_review_status,
@@ -146,7 +159,7 @@ export function mapPaperSummary(row: PaperRow & { user_favorite?: unknown }): Pa
 
 export const PAPER_COLUMNS = `
   p.id, p.doi, p.pmid, p.pmcid, p.openalex_id, p.semantic_scholar_id,
-  p.title, p.title_zh, p.authors_json, p.journal, p.publication_date,
+  p.title, p.title_zh, p.authors_json, p.journal, p.journal_issn, p.journal_metric, p.journal_metric_source, p.journal_metric_year, p.publication_date,
   p.online_publication_date, p.article_type, p.abstract, p.keywords_json,
   p.official_url, p.peer_review_status, p.publication_status, p.retraction_status,
   p.retraction_note, p.full_text_access_status, p.full_text_license, p.quality_score,

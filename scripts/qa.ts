@@ -74,7 +74,11 @@ async function main(): Promise<void> {
   const failedRequests: string[] = [];
 
   page.on("console", (message: ConsoleMessage) => {
-    if (message.type() === "error") consoleErrors.push(message.text().slice(0, 500));
+    if (message.type() !== "error") return;
+    const text = message.text();
+    // Next.js prefetch requests are aborted on navigation; this is not an app error.
+    if (text.includes("ERR_ABORTED") || text.includes("ERR_CONNECTION_CLOSED")) return;
+    consoleErrors.push(text.slice(0, 500));
   });
   page.on("pageerror", (error) => pageErrors.push(String(error).slice(0, 500)));
   page.on("requestfailed", (request) => {
@@ -125,7 +129,11 @@ async function main(): Promise<void> {
           localStorage.removeItem("baseedit-compare");
           window.dispatchEvent(new Event("baseedit-compare-change"));
         });
-        return { compareDockVisible: dockVisible };
+        const bodyText = await target.locator("body").innerText();
+        return {
+          compareDockVisible: dockVisible,
+          metricBadgesVisible: /(?:IF|2yr) \d/.test(bodyText),
+        };
       },
     },
     {
@@ -156,9 +164,9 @@ async function main(): Promise<void> {
         const figureImages = await target.locator(`#figures img`).count();
         for (const image of await target.locator("#figures img").all()) {
           await image.scrollIntoViewIfNeeded().catch(() => {});
-          await target.waitForTimeout(450);
+          await target.waitForTimeout(900);
         }
-        await target.waitForTimeout(800);
+        await target.waitForTimeout(2000);
         const loadedImages: number[] = [];
         for (let index = 0; index < figureImages; index += 1) {
           const width = await target
@@ -211,6 +219,20 @@ async function main(): Promise<void> {
     { name: "timeline", url: "/timeline", file: "06-timeline.png", fullPage: true, waitMs: 900 },
     { name: "weekly", url: "/weekly", file: "07-weekly.png", fullPage: true, waitMs: 600 },
     {
+      name: "library-metric",
+      url: "/papers?minMetric=5",
+      file: "03b-library-metric.png",
+      fullPage: true,
+      waitMs: 700,
+      action: async (target) => {
+        const text = await target.locator("body").innerText();
+        return {
+          hasMetricChip: text.includes("期刊指标 ≥ 5"),
+          hasCards: (await target.locator("article.card").count()) > 0,
+        };
+      },
+    },
+    {
       name: "global-search",
       url: "/search?q=base%20editing",
       file: "15-global-search.png",
@@ -260,7 +282,20 @@ async function main(): Promise<void> {
       : []),
     { name: "agent", url: "/agent", file: "08-agent.png", fullPage: true, waitMs: 1200 },
     { name: "candidates", url: "/candidates", file: "09-candidates.png", fullPage: true, waitMs: 800 },
-    { name: "settings", url: "/settings", file: "10-settings.png", fullPage: true, waitMs: 800 },
+    {
+      name: "settings",
+      url: "/settings",
+      file: "10-settings.png",
+      fullPage: true,
+      waitMs: 900,
+      action: async (target) => {
+        const text = await target.locator("body").innerText();
+        return {
+          hasMetricSettings: text.includes("期刊影响力筛选"),
+          hasImportUi: text.includes("导入指标 CSV"),
+        };
+      },
+    },
   ];
 
   const results: Record<string, unknown>[] = [];

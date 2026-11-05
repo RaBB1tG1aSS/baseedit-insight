@@ -23,6 +23,7 @@ export interface MergedCandidate {
   titleKey: string;
   authors: string[];
   journal: string | null;
+  issn: string | null;
   publicationDate: string | null;
   onlinePublicationDate: string | null;
   articleType: string | null;
@@ -208,6 +209,7 @@ function mergeOne(group: SourceRecord[]): MergedCandidate {
     titleKey: titleKey(title),
     authors,
     journal: best(group, (record) => record.journal),
+    issn: best(group, (record) => record.issn),
     publicationDate,
     onlinePublicationDate: best(group, (record) => record.onlinePublicationDate),
     articleType: mergeArticleType(group),

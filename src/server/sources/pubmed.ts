@@ -202,6 +202,7 @@ function parsePubmedArticle(article: Record<string, unknown>): ParsedArticle | n
     title,
     authors,
     journal,
+    issn: stripMarkup(xmlText(journalNode.ISSN as XmlNode)) || null,
     publicationDate,
     onlinePublicationDate: onlineDate,
     articleType,

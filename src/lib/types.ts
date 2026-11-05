@@ -29,6 +29,9 @@ export type RetractionStatus =
   | "correction"
   | "unknown";
 export type FullTextStatus = "oa_fulltext" | "abstract_only" | "unknown";
+
+export type JournalMetricSource = "jcr" | "openalex" | "custom";
+export type JournalMetricMode = "off" | "jcr" | "openalex" | "auto";
 export type RecommendationCategory = "latest" | "landmark";
 
 export type FocusArea =
@@ -64,6 +67,10 @@ export interface Paper {
   titleZh: string | null;
   authors: string[];
   journal: string | null;
+  journalIssn: string | null;
+  journalMetric: number | null;
+  journalMetricSource: JournalMetricSource | null;
+  journalMetricYear: number | null;
   publicationDate: string | null;
   onlinePublicationDate: string | null;
   articleType: string | null;
@@ -96,6 +103,10 @@ export interface PaperSummary {
   titleZh: string | null;
   authors: string[];
   journal: string | null;
+  journalIssn: string | null;
+  journalMetric: number | null;
+  journalMetricSource: JournalMetricSource | null;
+  journalMetricYear: number | null;
   publicationDate: string | null;
   articleType: string | null;
   peerReviewStatus: PeerReviewStatus;
@@ -359,6 +370,7 @@ export type JobType =
   | "reanalyze_paper"
   | "knowledge_update"
   | "reverify_paper"
+  | "journal_metrics_refresh"
   | "status_watch";
 
 export type JobStatus =
@@ -434,6 +446,7 @@ export interface SearchFilters {
   focusArea?: FocusArea;
   category?: RecommendationCategory;
   minScore?: number;
+  minJournalMetric?: number;
   readStatus?: "unread" | "reading" | "read";
   favorite?: boolean;
   status?: PaperStatus;
@@ -460,8 +473,31 @@ export interface AppSettings {
   minAcceptScore: number;
   minTopicRelevance: number;
   maxCandidatesPerRun: number;
+  journalMetricMode: JournalMetricMode;
+  minJournalMetric: number;
+  journalMetricUnknown: "allow" | "reject";
   focusQuery: string;
   ncbiEmail: string;
   openalexMailto: string;
   enableSemanticScholar: boolean;
+}
+
+export interface JournalMetricRecord {
+  journalId: string;
+  journalName: string;
+  issn: string | null;
+  eissn: string | null;
+  metricSource: JournalMetricSource;
+  metricYear: number;
+  value: number;
+}
+
+export interface JournalMetricCoverage {
+  totalJournals: number;
+  matchedJournals: number;
+  jcrCount: number;
+  openalexCount: number;
+  customCount: number;
+  missingJournals: string[];
+  recent: JournalMetricRecord[];
 }

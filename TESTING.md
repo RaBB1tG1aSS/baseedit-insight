@@ -11,8 +11,8 @@ npm test
 ```
 
 ```
-Test Files  8 passed (8)
-Tests       37 passed (37)
+Test Files  9 passed (9)
+Tests       42 passed (42)
 Duration    ~1 s
 ```
 
@@ -26,6 +26,7 @@ Duration    ~1 s
 | `tests/pubmed.test.ts` | PubMed XML：PMID/DOI/PMCID、作者、摘要、撤稿信号、同行评审 |
 | `tests/db.test.ts` | 候选隔离、DOI 反查、收藏/进度/笔记/历史、单日推荐唯一、实体别名去重、关系唯一、任务原子领取/去重、设置持久化、个性化推荐、全局搜索、洞察聚合 |
 | `tests/bibtex.test.ts` | BibTeX 文章条目、缺失期刊回退、多篇合并、作者/DOI/PMID/PMCID 字段 |
+| `tests/journal-metrics.test.ts` | 期刊名/ISSN 规范化、JCR CSV 导入、指标回写、门槛筛选、未知期刊策略、低于阈值拒绝 |
 
 构建：
 
@@ -154,6 +155,7 @@ Playwright/Chrome 实测结果（截图在 `data/screens/`，JSON 为 `qa-report
 - **研究洞察** `/insights`：发表年份分布与个性化推荐渲染正常。
 - **论文对比** `/compare?ids=…`：2 篇并排比较，主要结果/创新/局限/数据字段完整。
 - **对比浮层**：文献库点击「对比」后出现「已选 1 篇论文」浮层，可清空，localStorage 行为正常。
+- **期刊指标**：文献库卡片显示 `2yr` 徽标；`/papers?minMetric=5` 筛选项生效；设置页显示指标覆盖、JCR 导入与 OpenAlex 刷新入口；论文页图表图片可随滚动加载，PMC CDN 无失败请求。
 - 移动端（390×844）：`/`、`/papers`、`/papers/[id]`、`/insights`、`/search`、`/compare` 横向溢出均为 0px。
 - Windows 静默启动器：Stop 后健康检查为 000；`Start-BaseEdit-Insight.ps1 -NoBrowser` 静默启动后健康检查 200、worker 在线；桌面快捷方式目标为 `wscript.exe` + `Start-BaseEdit-Insight.vbs`，图标为 `assets/baseedit.ico`。
 

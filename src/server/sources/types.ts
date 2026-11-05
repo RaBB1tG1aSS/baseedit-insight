@@ -19,6 +19,7 @@ export interface SourceRecord {
   title: string;
   authors: string[];
   journal: string | null;
+  issn?: string | null;
   publicationDate: string | null;
   onlinePublicationDate: string | null;
   articleType: string | null;

@@ -17,7 +17,7 @@ interface OpenAlexWork {
   ids?: { pmid?: string; pmcid?: string; openalex?: string; doi?: string };
   authorships?: { author?: { display_name?: string } }[];
   primary_location?: {
-    source?: { display_name?: string | null; type?: string | null };
+    source?: { display_name?: string | null; type?: string | null; issn_l?: string | null; issn?: string[] | null };
     license?: string | null;
     landing_page_url?: string | null;
     is_oa?: boolean;
@@ -86,6 +86,7 @@ export function mapOpenAlexWork(work: OpenAlexWork): SourceRecord {
       .map((authorship) => authorship.author?.display_name ?? "")
       .filter(Boolean),
     journal,
+    issn: work.primary_location?.source?.issn_l ?? work.primary_location?.source?.issn?.[0] ?? null,
     publicationDate: toIsoDate(work.publication_date) ?? (work.publication_year ? `${work.publication_year}-01-01` : null),
     onlinePublicationDate: null,
     articleType,

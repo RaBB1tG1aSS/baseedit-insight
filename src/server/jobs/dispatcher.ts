@@ -7,6 +7,7 @@ import { reverifyPaper } from "../pipeline/reverify";
 import { recheckPaperStatus } from "../pipeline/statusWatch";
 import { extractKnowledgeAI, extractKnowledgeRuleBased } from "../ai/knowledge";
 import { generateWeeklyReport } from "../ai/weekly";
+import { refreshJournalMetricsForCorpus } from "../metrics/journals";
 import { isAiAvailable } from "../ai/client";
 import { getPaperById, getPapersPendingStatusWatch } from "../db/repo/papers";
 import { todayInZone } from "../db/client";
@@ -146,6 +147,17 @@ export async function runJob(job: JobRun): Promise<void> {
       const result = await reverifyPaper(paperId);
       log("info", "verify", `重新核验完成：${result.status}，质量 ${result.quality}/100`, result);
       setStage("done", "重新核验完成");
+      return;
+    }
+
+    case "journal_metrics_refresh": {
+      setStage("metrics", "刷新期刊影响力指标");
+      const result = await refreshJournalMetricsForCorpus({
+        force: payload.force === true,
+        onLog: (level, message) => log(level, "metrics", message),
+      });
+      log("info", "metrics", `期刊指标刷新完成：${result.fetched}/${result.journals} 个期刊有指标，${result.updatedPapers} 篇论文已更新`);
+      setStage("done", "期刊指标刷新完成", { total: result.journals, fetched: result.fetched });
       return;
     }
 

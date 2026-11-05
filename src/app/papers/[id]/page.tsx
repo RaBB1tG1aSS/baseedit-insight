@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { DeepReadContent, EvidenceNature } from "@/lib/types";
 import { FOCUS_LABEL } from "@/lib/constants";
+import { metricPrefix, metricTitle } from "@/lib/journal-metric";
 import { authorsLine, formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { getAcceptedPaperById, getRelatedPapers } from "@/server/db/repo/papers";
 import {
@@ -125,6 +126,11 @@ export default async function PaperPage({ params }: { params: Promise<{ id: stri
           {paper.focusAreas.map((area) => (
             <FocusBadge key={area} area={area} />
           ))}
+          {paper.journalMetric != null ? (
+            <Badge variant="outline" title={metricTitle(paper.journalMetric, paper.journalMetricSource, paper.journalMetricYear)}>
+              {metricPrefix(paper.journalMetricSource)} {paper.journalMetric.toFixed(1)}
+            </Badge>
+          ) : null}
           {paper.recommendationCategory ? (
             <Badge variant={paper.recommendationCategory === "landmark" ? "gold" : "accent"}>
               {paper.recommendationCategory === "landmark" ? "经典研究" : "前沿研究"}

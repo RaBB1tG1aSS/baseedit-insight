@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, BookOpen, Circle, FileText, Quote, Star } from "lucide-react";
 import type { PaperSummary, UserRecord } from "@/lib/types";
 import { FOCUS_LABEL } from "@/lib/constants";
+import { metricPrefix, metricTitle } from "@/lib/journal-metric";
 import { authorsLine, formatDate } from "@/lib/format";
 import { Badge, PeerReviewBadge, RetractionBadge, cx } from "./ui";
 import { FavoriteButton } from "./library-controls";
@@ -37,6 +38,11 @@ export function PaperCard({
           {recLabel ? <Badge variant={paper.recommendationCategory === "landmark" ? "gold" : "accent"}>{recLabel}</Badge> : null}
           <PeerReviewBadge status={paper.peerReviewStatus} />
           <RetractionBadge status={paper.retractionStatus} />
+          {paper.journalMetric != null ? (
+            <Badge variant="outline" title={metricTitle(paper.journalMetric, paper.journalMetricSource, paper.journalMetricYear)}>
+              {metricPrefix(paper.journalMetricSource)} {paper.journalMetric.toFixed(1)}
+            </Badge>
+          ) : null}
           {paper.fullTextAccessStatus === "oa_fulltext" ? (
             <Badge variant="outline">
               <BookOpen size={10} /> 全文

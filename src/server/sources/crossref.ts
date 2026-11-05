@@ -22,6 +22,7 @@ interface CrossrefWork {
   "is-referenced-by-count"?: number;
   license?: { URL?: string; "content-version"?: string }[];
   abstract?: string;
+  ISSN?: string[];
   subject?: string[];
   "update-to"?: { DOI?: string; type?: string; label?: string }[];
   URL?: string;
@@ -88,6 +89,7 @@ export function mapCrossrefWork(work: CrossrefWork): SourceRecord {
       .map((author) => author.name || [author.given, author.family].filter(Boolean).join(" "))
       .filter(Boolean),
     journal,
+    issn: work.ISSN?.[0] ?? null,
     publicationDate,
     onlinePublicationDate: dateParts(work["published-online"]),
     articleType,

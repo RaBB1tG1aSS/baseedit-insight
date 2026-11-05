@@ -14,6 +14,7 @@ const JOB_TYPES: JobType[] = [
   "reanalyze_paper",
   "knowledge_update",
   "reverify_paper",
+  "journal_metrics_refresh",
   "status_watch",
 ];
 

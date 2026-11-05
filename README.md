@@ -57,6 +57,12 @@ BaseEdit Insight 是一个可以自己部署、长期积累的 **碱基编辑（
 - 依据个人收藏、已读、笔记与打开记录计算方向权重，推荐未读论文；
 - 明确标注样本量限制，不把局部统计包装成领域趋势。
 
+### 期刊影响力筛选
+- 支持导入你所在机构订阅的 **JCR Impact Factor CSV**，只在本地保存，不内置或分发授权数据；
+- 自动获取 **OpenAlex 2yr mean citedness**（开放引用指标，明确标注不是 IF）作为替代；
+- 可设置最低指标与未知期刊策略；新论文入库、每日推荐和文献库筛选均可使用；
+- 详见 [docs/JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md)。
+
 
 ### 研究控制台
 首页集成了 P0 工作台：**双轨精选 / 手动检索 / 精讲队列 / 候选审核 / 运行控制**，日常操作不需要在多个页面之间切换。
@@ -277,12 +283,12 @@ Europe PMC / PubMed / Crossref / OpenAlex
 ## 测试
 
 ```bash
-npm test            # 37 个单元 / 数据库测试
+npm test            # 42 个单元 / 数据库测试
 npm run live:check  # 真实 Europe PMC / PubMed / Crossref 冒烟测试（不写库）
 npm run build       # 生产构建
 ```
 
-已覆盖：DOI 规范化、跨源去重、撤稿状态、质量评分边界、相关性门槛、PubMed 解析、候选隔离、单日推荐唯一、实体/关系去重、任务原子领取、设置持久化、BibTeX、全局搜索、个性化推荐与洞察聚合。
+已覆盖：DOI 规范化、跨源去重、撤稿状态、质量评分边界、相关性门槛、PubMed 解析、候选隔离、单日推荐唯一、实体/关系去重、任务原子领取、设置持久化、BibTeX、全局搜索、个性化推荐、洞察聚合、JCR CSV 导入与期刊指标门槛。
 
 实际测试记录与浏览器 QA 结果见 [TESTING.md](./TESTING.md)。
 
@@ -315,6 +321,7 @@ npm run build       # 生产构建
 - [TESTING.md](./TESTING.md) — 实际测试与验收记录
 - [P0-AUDIT.md](./P0-AUDIT.md) — P0 客户端功能审计
 - [P1-P2-AUDIT.md](./P1-P2-AUDIT.md) — P1/P2 建设进度与剩余边界
+- [docs/JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md) — JCR 导入、OpenAlex 指标与筛选规则
 - [.env.example](./.env.example) — 全部环境变量
 
 ---

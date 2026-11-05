@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Database, HardDriveDownload, ServerCog, Sparkles } from "lucide-react";
+import { BarChart3, Database, HardDriveDownload, ServerCog, Sparkles } from "lucide-react";
 import { getSettings } from "@/server/db/repo/settings";
 import { getWorkerStatus } from "@/server/db/repo/dashboard";
 import { aiStatus } from "@/server/ai/client";
+import { getJournalMetricCoverage } from "@/server/metrics/journals";
 import { countByStatus } from "@/server/db/repo/papers";
 import { resolveDatabasePath } from "@/server/env";
 import { formatDateTimeZone, relativeTime } from "@/lib/format";
@@ -20,6 +21,7 @@ export default function SettingsPage() {
   const ai = aiStatus();
   const counts = countByStatus();
   const dbPath = resolveDatabasePath();
+  const metricCoverage = getJournalMetricCoverage();
   const envFlags = {
     anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
     ncbi: Boolean(process.env.NCBI_API_KEY),
@@ -36,7 +38,7 @@ export default function SettingsPage() {
         </p>
       </header>
 
-      <div className="mb-6 grid gap-3 md:grid-cols-4">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 md:grid-cols-5">
         <StatusCard
           label="Worker"
           value={worker.online ? "在线" : "离线"}
@@ -50,6 +52,13 @@ export default function SettingsPage() {
           hint={ai.available ? `${ai.provider} · ${ai.model}` : ai.reason ?? "未配置"}
           tone={ai.available ? "success" : "warn"}
           icon={<Sparkles size={13} />}
+        />
+        <StatusCard
+          label="期刊指标"
+          value={`${metricCoverage.matchedJournals}/${metricCoverage.totalJournals}`}
+          hint={`JCR ${metricCoverage.jcrCount} · OpenAlex ${metricCoverage.openalexCount}`}
+          tone={metricCoverage.matchedJournals ? "accent" : "warn"}
+          icon={<BarChart3 size={13} />}
         />
         <StatusCard
           label="中央文献库"
@@ -78,7 +87,7 @@ export default function SettingsPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <SettingsForm initial={settings} />
+        <SettingsForm initial={settings} metricCoverage={metricCoverage} />
 
         <aside className="space-y-4">
           <div className="card p-5">

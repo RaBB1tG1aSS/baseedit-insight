@@ -77,6 +77,7 @@ export function ingestCandidate(params: {
     setIf("pmcid", candidate.pmcid, existing.pmcid);
     setIf("openalex_id", candidate.openalexId, existing.openalexId);
     setIf("journal", candidate.journal, existing.journal);
+    setIf("journal_issn", candidate.issn, existing.journalIssn);
     setIf("publication_date", candidate.publicationDate, existing.publicationDate);
     setIf("online_publication_date", candidate.onlinePublicationDate, existing.onlinePublicationDate);
     setIf("article_type", candidate.articleType, existing.articleType);
@@ -160,6 +161,7 @@ export function ingestCandidate(params: {
     title: candidate.title,
     authors: candidate.authors,
     journal: candidate.journal,
+    journalIssn: candidate.issn,
     publicationDate: candidate.publicationDate,
     onlinePublicationDate: candidate.onlinePublicationDate,
     articleType: candidate.articleType,

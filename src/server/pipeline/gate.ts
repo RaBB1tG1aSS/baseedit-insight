@@ -3,6 +3,13 @@ import { EXCLUDED_ARTICLE_TYPES } from "../sources/types";
 import type { VerificationOutcome } from "./verify";
 import type { QualityResult } from "./quality";
 import type { RelevanceAssessment } from "./relevance";
+import type { ResolvedJournalMetric } from "../metrics/journals";
+
+const METRIC_LABEL: Record<string, string> = {
+  jcr: "JCR IF",
+  custom: "自定义期刊指标",
+  openalex: "OpenAlex 2yr citedness",
+};
 
 export interface GateResult {
   status: PaperStatus;
@@ -20,9 +27,28 @@ export function gateDecision(input: {
   settings: AppSettings;
   articleType: string | null;
   title: string;
+  journalMetric?: ResolvedJournalMetric | null;
 }): GateResult {
   const reasons: string[] = [];
   const { verification, quality, relevance, settings } = input;
+  let metricReject = false;
+  const metricFilterActive =
+    settings.journalMetricMode !== "off" && settings.minJournalMetric > 0;
+
+  if (metricFilterActive) {
+    const metric = input.journalMetric ?? null;
+    if (!metric) {
+      if (settings.journalMetricUnknown === "reject") {
+        reasons.push(`未找到期刊影响力指标（${settings.journalMetricMode}），按设置排除`);
+        metricReject = true;
+      }
+    } else if (metric.value < settings.minJournalMetric) {
+      reasons.push(
+        `期刊影响力 ${metric.value}（${METRIC_LABEL[metric.source] ?? metric.source}，${metric.year}）低于门槛 ${settings.minJournalMetric}`,
+      );
+      metricReject = true;
+    }
+  }
 
   if (!relevance.isCore || relevance.score < settings.minTopicRelevance) {
     reasons.push(
@@ -69,7 +95,8 @@ export function gateDecision(input: {
     verification.retraction.status === "retracted" ||
     verification.fatal.length > 0 ||
     !relevance.isCore ||
-    quality.total < settings.minAcceptScore;
+    quality.total < settings.minAcceptScore ||
+    metricReject;
 
   if (hardReject) return { status: "rejected", reasons };
 

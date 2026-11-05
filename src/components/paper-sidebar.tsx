@@ -14,6 +14,7 @@ import type {
   VerificationRecord,
 } from "@/lib/types";
 import { formatDate } from "@/lib/format";
+import { metricPrefix, metricTitle } from "@/lib/journal-metric";
 import { ActionButton } from "./action-button";
 import { NoteEditor } from "./library-controls";
 import { Badge, ExternalLink, ProgressBar, ScoreRing, cx } from "./ui";
@@ -89,6 +90,15 @@ export function PaperSidebar({
             }
           />
           <Meta label="引用" value={String(paper.citationCount)} />
+          <Meta
+            label="期刊指标"
+            value={
+              paper.journalMetric == null
+                ? "—"
+                : `${metricPrefix(paper.journalMetricSource)} ${paper.journalMetric.toFixed(1)}`
+            }
+            title={metricTitle(paper.journalMetric, paper.journalMetricSource, paper.journalMetricYear)}
+          />
           <Meta label="全文" value={effectiveAccess === "oa_fulltext" ? "开放获取" : "仅摘要"} />
           <Meta label="许可" value={paper.fullTextLicense ?? "—"} />
           {fullTextCharCount ? <Meta label="全文规模" value={`${Math.round(fullTextCharCount / 1000)}k 字符`} /> : null}
@@ -233,11 +243,11 @@ export function PaperSidebar({
   );
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Meta({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
     <div className="flex items-start justify-between gap-3">
       <dt className="shrink-0 text-faint">{label}</dt>
-      <dd className="truncate text-right text-ink-2" title={value}>
+      <dd className="truncate text-right text-ink-2" title={title ?? value}>
         {value}
       </dd>
     </div>

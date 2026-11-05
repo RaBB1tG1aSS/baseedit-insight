@@ -4,10 +4,11 @@ import { getDb, nowIso } from "../client";
 import { env } from "../../env";
 import { getSettings } from "./settings";
 import { nextRun } from "../../utils/time";
-import { countByStatus, getRecentAccepted } from "./papers";
+import { countByStatus, getPaperById, getRecentAccepted } from "./papers";
 import { getReadingHistory, countReadingThisWeek } from "./user";
 import { getLatestWeeklyReport, getRecentRelations, getRecommendationForDate } from "./knowledge";
 import { todayInZone } from "../client";
+import { paperPassesJournalMetric } from "../../metrics/journals";
 import { mapPaperSummary, parseJson, PAPER_COLUMNS, type PaperRow } from "../mappers";
 
 export function heartbeat(workerId: string, schedulerEnabled: boolean): void {
@@ -52,13 +53,23 @@ export function getDashboardData(): DashboardData {
   const today = todayInZone(settings.timezone);
   const weekAgoIso = new Date(Date.now() - 7 * 86400000).toISOString();
 
-  const todayRecommendation = getRecommendationForDate(today);
+  let todayRecommendation = getRecommendationForDate(today);
+  if (todayRecommendation) {
+    const recommendedPaper = getPaperById(todayRecommendation.paperId);
+    if (!recommendedPaper || !paperPassesJournalMetric(recommendedPaper, settings)) {
+      todayRecommendation = null;
+    }
+  }
   const recentPapers = getRecentAccepted(6).map((paper) => ({
     id: paper.id,
     title: paper.title,
     titleZh: paper.titleZh,
     authors: paper.authors,
     journal: paper.journal,
+    journalIssn: paper.journalIssn,
+    journalMetric: paper.journalMetric,
+    journalMetricSource: paper.journalMetricSource,
+    journalMetricYear: paper.journalMetricYear,
     publicationDate: paper.publicationDate,
     articleType: paper.articleType,
     peerReviewStatus: paper.peerReviewStatus,
