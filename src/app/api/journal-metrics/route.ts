@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   csv: z.string().min(10).max(5_000_000),
-  source: z.enum(["jcr", "custom"]).optional(),
+  source: z.enum(["jcr", "custom", "snip", "sjr"]).optional(),
   year: z.number().int().min(1990).max(2100).optional(),
 });
 

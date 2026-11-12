@@ -4,12 +4,16 @@ export const METRIC_SOURCE_LABEL: Record<JournalMetricSource, string> = {
   jcr: "JCR Impact Factor",
   openalex: "OpenAlex 2yr mean citedness",
   custom: "自定义期刊指标",
+  snip: "CWTS SNIP",
+  sjr: "SCImago SJR",
 };
 
 export const METRIC_SOURCE_SHORT: Record<JournalMetricSource, string> = {
   jcr: "IF",
   openalex: "2yr",
   custom: "指标",
+  snip: "SNIP",
+  sjr: "SJR",
 };
 
 export function metricPrefix(source: JournalMetricSource | null | undefined): string {

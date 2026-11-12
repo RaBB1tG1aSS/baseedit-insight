@@ -74,13 +74,17 @@ Clarivate 提供官方的 **Web of Science Journals API**，可直接获取 JCR 
 | `jcr` | Clarivate Journal Citation Reports 的 Journal Impact Factor | 机构订阅导出 CSV，手动导入 |
 | `custom` | 你维护的自定义期刊指标/白名单分数 | 手动导入 CSV |
 | `openalex` | OpenAlex `2yr_mean_citedness`（开放引用指标） | 设置页点击「刷新 OpenAlex 指标」 |
+| `snip` | CWTS Journal Indicators 的 SNIP（基于 Scopus） | 官方 Excel 导出后导入 |
+| `sjr` | SCImago Journal Rank 的 SJR（基于 Scopus） | 官方 XLS 导出后导入 |
 
 设置页「期刊影响力筛选」中可选择：
 
 - **关闭**：不按期刊指标筛选；
 - **JCR 影响因子（导入）**：只使用你导入的 JCR 数据；
 - **OpenAlex 2yr citedness**：使用 OpenAlex 开放指标；
-- **优先 JCR，缺失用 OpenAlex**：先查 JCR，缺失时回退 OpenAlex。
+- **CWTS SNIP**：使用你导入的 CWTS SNIP；
+- **SCImago SJR**：使用你导入的 SJR；
+- **优先 JCR，其次 OpenAlex / SNIP / SJR**：先查 JCR，缺失时依次回退 OpenAlex、SNIP、SJR。
 
 > OpenAlex 的 2yr citedness 与 JCR IF 计算方式不同，部分期刊数值可能异常（例如 Journal of Hepatology 在 OpenAlex 中约 2.8，但 JCR IF 远高于此）。把它当作辅助信号，不建议直接用高阈值硬筛。
 >
@@ -155,6 +159,24 @@ npm run metrics:import -- "C:\path\to\jcr-2025.csv" --year=2025 --source=jcr
 指标只影响筛选与推荐，不会改写论文元数据或伪造数值。
 
 ---
+
+## 3.5 导入 CWTS SNIP / SCImago SJR
+
+### CWTS SNIP
+
+1. 打开 <https://www.journalindicators.com/downloads>，下载官方 Excel；
+2. 用 Excel 把工作表另存为 CSV（或直接导出包含 `Source title`、`SNIP`、`Year` 的 CSV）；
+3. 设置页导入，来源选 **CWTS SNIP**；客户端可识别 `Journal` / `Source title` / `Title` 与 `SNIP` 列；
+4. 阈值按 SNIP 量纲设置，通常从 **0.8–1.5** 开始，不要直接套用 JCR IF 的 5/10。
+
+### SCImago SJR
+
+1. 打开 <https://www.scimagojr.com/journalrank.php>，使用页面提供的下载按钮获取 XLS；
+2. 转换为 CSV，保留 `Title`、`ISSN`、`SJR`、`Year`（若文件没有年份，导入时手动填写）；SCImago 站点启用了 Cloudflare 人机验证，自动化脚本会被 403 拦截，请用普通桌面浏览器手动完成验证后下载；系统不会绕过验证；
+3. 设置页导入，来源选 **SCImago SJR**；
+4. SJR 量纲与 IF 不同，阈值建议从 **0.5–1.5** 开始。
+
+> 这些公开数据不等于 JCR IF；系统会在论文徽标和核验记录中标注 `SNIP` / `SJR`，不会写成 `IF`。下载的数据请只在本机使用，遵守 CWTS/SCImago 的使用条款，不要提交到 Git。
 
 ## 4. 刷新 OpenAlex 指标
 

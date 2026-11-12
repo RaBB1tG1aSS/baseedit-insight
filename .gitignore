@@ -16,3 +16,4 @@ data/*.html
 *.tsbuildinfo
 data/*.csv
 data/*.tsv
+data/external/

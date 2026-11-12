@@ -58,7 +58,7 @@ export const env = {
   minAcceptScore: Number(process.env.MIN_ACCEPT_SCORE || "60"),
   minTopicRelevance: Number(process.env.MIN_TOPIC_RELEVANCE || "8"),
   maxCandidatesPerRun: Number(process.env.MAX_CANDIDATES_PER_RUN || "40"),
-  journalMetricMode: (process.env.JOURNAL_METRIC_MODE || "auto") as "off" | "jcr" | "openalex" | "auto",
+  journalMetricMode: (process.env.JOURNAL_METRIC_MODE || "auto") as "off" | "jcr" | "openalex" | "snip" | "sjr" | "auto",
   minJournalMetric: Number(process.env.MIN_JOURNAL_METRIC || "1"),
   journalMetricUnknown: (process.env.JOURNAL_METRIC_UNKNOWN || "allow") as "allow" | "reject",
   workerVersion: "1.0.0",

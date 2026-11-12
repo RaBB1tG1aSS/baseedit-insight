@@ -12,7 +12,7 @@ npm test
 
 ```
 Test Files  9 passed (9)
-Tests       42 passed (42)
+Tests       44 passed (44)
 Duration    ~1 s
 ```
 
@@ -26,7 +26,7 @@ Duration    ~1 s
 | `tests/pubmed.test.ts` | PubMed XML：PMID/DOI/PMCID、作者、摘要、撤稿信号、同行评审 |
 | `tests/db.test.ts` | 候选隔离、DOI 反查、收藏/进度/笔记/历史、单日推荐唯一、实体别名去重、关系唯一、任务原子领取/去重、设置持久化、个性化推荐、全局搜索、洞察聚合 |
 | `tests/bibtex.test.ts` | BibTeX 文章条目、缺失期刊回退、多篇合并、作者/DOI/PMID/PMCID 字段 |
-| `tests/journal-metrics.test.ts` | 期刊名/ISSN 规范化、JCR CSV 导入、指标回写、门槛筛选、未知期刊策略、低于阈值拒绝 |
+| `tests/journal-metrics.test.ts` | 期刊名/ISSN 规范化、JCR CSV 导入、CWTS SNIP / SCImago SJR 导入、指标回写、门槛筛选、未知期刊策略、低于阈值拒绝 |
 
 构建：
 

@@ -30,8 +30,8 @@ export type RetractionStatus =
   | "unknown";
 export type FullTextStatus = "oa_fulltext" | "abstract_only" | "unknown";
 
-export type JournalMetricSource = "jcr" | "openalex" | "custom";
-export type JournalMetricMode = "off" | "jcr" | "openalex" | "auto";
+export type JournalMetricSource = "jcr" | "openalex" | "custom" | "snip" | "sjr";
+export type JournalMetricMode = "off" | "jcr" | "openalex" | "snip" | "sjr" | "auto";
 export type RecommendationCategory = "latest" | "landmark";
 
 export type FocusArea =
@@ -498,6 +498,8 @@ export interface JournalMetricCoverage {
   jcrCount: number;
   openalexCount: number;
   customCount: number;
+  snipCount: number;
+  sjrCount: number;
   missingJournals: string[];
   recent: JournalMetricRecord[];
 }

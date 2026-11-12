@@ -18,10 +18,14 @@ function arg(name: string): string | undefined {
 async function main(): Promise<void> {
   const file = process.argv[2];
   if (!file || file.startsWith("--")) {
-    throw new Error("Usage: tsx scripts/import-journal-metrics.ts <file.csv> [--year=2025] [--source=jcr|custom]");
+    throw new Error(
+      "Usage: tsx scripts/import-journal-metrics.ts <file.csv> [--year=2025] [--source=jcr|custom|snip|sjr]",
+    );
   }
   const csv = fs.readFileSync(path.resolve(file), "utf8");
-  const source = arg("source") === "custom" ? "custom" : "jcr";
+  const rawSource = arg("source");
+  const source =
+    rawSource === "custom" || rawSource === "snip" || rawSource === "sjr" ? rawSource : "jcr";
   const year = arg("year") ? Number(arg("year")) : undefined;
   const result = importJournalMetricsCsv(csv, { source, year });
   console.log(JSON.stringify(result, null, 2));

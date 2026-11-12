@@ -9,6 +9,7 @@ import { getDb, newId, nowIso } from "../db/client";
 import { env } from "../env";
 import { fetchJson } from "../sources/http";
 import { titleSimilarity } from "../utils/normalize";
+import { getSettings } from "../db/repo/settings";
 
 export interface ResolvedJournalMetric {
   value: number;
@@ -55,10 +56,14 @@ function sourceOrder(mode: JournalMetricMode): JournalMetricSource[] {
       return ["jcr", "custom"];
     case "openalex":
       return ["openalex"];
+    case "snip":
+      return ["snip"];
+    case "sjr":
+      return ["sjr"];
     case "auto":
     case "off":
     default:
-      return ["jcr", "custom", "openalex"];
+      return ["jcr", "custom", "openalex", "snip", "sjr"];
   }
 }
 
@@ -259,8 +264,8 @@ function storeMetric(input: {
     );
 }
 
-/** Copy the best available metric into papers for display/filtering. */
-export function applyMetricsToPapers(): number {
+/** Copy the metric for the active source preference into papers. */
+export function applyMetricsToPapers(mode: JournalMetricMode = "auto"): number {
   const db = getDb();
   const papers = db
     .prepare("SELECT id, journal, journal_issn FROM papers WHERE journal IS NOT NULL AND journal <> ''")
@@ -269,14 +274,21 @@ export function applyMetricsToPapers(): number {
     `UPDATE papers SET journal_issn = COALESCE(?, journal_issn), journal_metric = ?,
        journal_metric_source = ?, journal_metric_year = ?, updated_at = ? WHERE id = ?`,
   );
+  const clear = db.prepare(
+    `UPDATE papers SET journal_metric = NULL, journal_metric_source = NULL,
+       journal_metric_year = NULL, updated_at = ? WHERE id = ?`,
+  );
   let changed = 0;
   const run = db.transaction(() => {
     for (const paper of papers) {
       const metric = findJournalMetric(
         { journal: paper.journal, issn: paper.journal_issn },
-        "auto",
+        mode,
       );
-      if (!metric) continue;
+      if (!metric) {
+        clear.run(nowIso(), paper.id);
+        continue;
+      }
       update.run(metric.issn, metric.value, metric.source, metric.year, nowIso(), paper.id);
       changed += 1;
     }
@@ -324,7 +336,7 @@ export async function refreshJournalMetricsForCorpus(options: {
     );
   }
 
-  const updatedPapers = applyMetricsToPapers();
+  const updatedPapers = applyMetricsToPapers(getSettings().journalMetricMode);
   return { journals: journals.length, fetched, failed, updatedPapers };
 }
 
@@ -394,7 +406,7 @@ function parseMetricValue(raw: string): number | null {
 
 export function importJournalMetricsCsv(
   csv: string,
-  options: { source?: "jcr" | "custom"; year?: number } = {},
+  options: { source?: "jcr" | "custom" | "snip" | "sjr"; year?: number } = {},
 ): { imported: number; skipped: number; updatedPapers: number } {
   const source = options.source ?? "jcr";
   const fallbackYear = options.year ?? new Date().getFullYear();
@@ -410,26 +422,53 @@ export function importJournalMetricsCsv(
       ["journal", "journal name", "title", "full journal title"].includes(header),
     );
     const hasMetric = normalized.some(
-      (header) => header.includes("impact factor") || header.endsWith(" jif") || header === "jif",
+      (header) =>
+        header.includes("impact factor") ||
+        header.endsWith(" jif") ||
+        header === "jif" ||
+        header === "snip" ||
+        header === "sjr" ||
+        header.includes("scimago journal rank"),
     );
     return hasJournal && hasMetric;
   });
   if (headerRowIndex < 0) {
-    throw new Error("无法识别表头：需要期刊名称列（Journal/Title）和影响因子列（Impact Factor/JIF）");
+    throw new Error(
+      "无法识别表头：需要期刊名称列（Journal/Title）和指标列（Impact Factor/JIF/SNIP/SJR）",
+    );
   }
 
   const headers = rows[headerRowIndex].map(normalizeHeader);
-  const journalIndex = headerIndex(headers, ["journal", "journal name", "title", "full journal title"]);
-  let metricIndex = headerIndex(headers, [
+  const journalIndex = headerIndex(headers, [
+    "journal",
+    "journal name",
+    "journal title",
+    "title",
+    "source title",
+    "full journal title",
+  ]);
+  const ifAliases = [
     "impact factor",
     "journal impact factor",
     "jif",
-    "if",
+    "2023 jif",
     "2024 jif",
     "2025 jif",
     "journal impact factor jif",
-  ]);
-  if (metricIndex < 0) {
+    "if",
+  ];
+  // Keep JCR imports strictly IF-only: importing a SNIP/SJR file as JCR would
+  // mislabel the number as Clarivate Impact Factor.
+  const metricAliases =
+    source === "snip"
+      ? ["snip"]
+      : source === "sjr"
+        ? ["sjr", "scimago journal rank", "scimago journal rank indicator"]
+        : source === "jcr"
+          ? ifAliases
+          : [...ifAliases, "snip", "sjr", "scimago journal rank"];
+  let metricIndex = headerIndex(headers, metricAliases);
+  if (metricIndex < 0 && source === "custom") {
     metricIndex = headers.findIndex(
       (header) => header.includes("impact factor") || header.endsWith(" jif"),
     );
@@ -440,7 +479,15 @@ export function importJournalMetricsCsv(
   const headerYearMatch = /^(\d{4})\s+jif$/.exec(headers[metricIndex] ?? "");
 
   if (journalIndex < 0 || metricIndex < 0) {
-    throw new Error("无法识别表头：需要期刊名称列（Journal/Title）和影响因子列（Impact Factor/JIF）");
+    throw new Error(
+      source === "jcr"
+        ? "无法识别表头：JCR 导入需要 Impact Factor / JIF 列；如果这是 SNIP 或 SJR 文件，请先把导入来源切换为 CWTS SNIP / SCImago SJR。"
+        : source === "snip"
+          ? "无法识别表头：CWTS SNIP 导入需要期刊名称列（Journal/Source title/Title）和 SNIP 列。"
+          : source === "sjr"
+            ? "无法识别表头：SCImago SJR 导入需要期刊名称列（Title）和 SJR 列。"
+            : "无法识别表头：需要期刊名称列（Journal/Title）和指标列（Impact Factor/JIF/SNIP/SJR）",
+    );
   }
 
   let imported = 0;
@@ -476,7 +523,7 @@ export function importJournalMetricsCsv(
   });
   run();
 
-  const updatedPapers = applyMetricsToPapers();
+  const updatedPapers = applyMetricsToPapers(getSettings().journalMetricMode);
   return { imported, skipped, updatedPapers };
 }
 
@@ -515,6 +562,8 @@ export function getJournalMetricCoverage(): JournalMetricCoverage {
     jcrCount: count("jcr"),
     openalexCount: count("openalex"),
     customCount: count("custom"),
+    snipCount: count("snip"),
+    sjrCount: count("sjr"),
     missingJournals: missing.map((row) => row.journal),
     recent: recentRows.map((row) => ({
       journalId: row.journal_id,

@@ -9,6 +9,8 @@ const METRIC_LABEL: Record<string, string> = {
   jcr: "JCR IF",
   custom: "自定义期刊指标",
   openalex: "OpenAlex 2yr citedness",
+  snip: "CWTS SNIP",
+  sjr: "SCImago SJR",
 };
 
 export interface GateResult {

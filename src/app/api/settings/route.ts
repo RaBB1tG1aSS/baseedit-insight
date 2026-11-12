@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSettings, saveSettings } from "@/server/db/repo/settings";
+import { applyMetricsToPapers } from "@/server/metrics/journals";
 import { getWorkerStatus } from "@/server/db/repo/dashboard";
 import { aiStatus } from "@/server/ai/client";
 import { resolveDatabasePath } from "@/server/env";
@@ -19,7 +20,7 @@ const settingsSchema = z
     minAcceptScore: z.number().min(0).max(100).optional(),
     minTopicRelevance: z.number().min(0).max(15).optional(),
     maxCandidatesPerRun: z.number().int().min(1).max(200).optional(),
-    journalMetricMode: z.enum(["off", "jcr", "openalex", "auto"]).optional(),
+    journalMetricMode: z.enum(["off", "jcr", "openalex", "snip", "sjr", "auto"]).optional(),
     minJournalMetric: z.number().min(0).max(100).optional(),
     journalMetricUnknown: z.enum(["allow", "reject"]).optional(),
     focusQuery: z.string().min(10).max(2000).optional(),
@@ -65,5 +66,6 @@ export async function PUT(request: Request) {
   }
 
   const settings = saveSettings(parsed.data);
+  applyMetricsToPapers(settings.journalMetricMode);
   return NextResponse.json({ settings, message: "设置已保存；worker 会在 30 秒内应用新的调度时间" });
 }

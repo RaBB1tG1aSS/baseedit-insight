@@ -82,6 +82,48 @@ Nature,0028-0836,50.5,2025
     expect(coverage.jcrCount).toBe(2);
   });
 
+  it("imports CWTS SNIP and SCImago SJR as first-class sources", () => {
+    metrics.importJournalMetricsCsv(
+      ["Journal,SNIP,Year", "Nature,2.50,2025", ""].join(String.fromCharCode(10)),
+      { source: "snip" },
+    );
+    metrics.importJournalMetricsCsv(
+      ["Title,SJR,Year", "Nature,1.80,2025", ""].join(String.fromCharCode(10)),
+      { source: "sjr" },
+    );
+
+    expect(metrics.findJournalMetric({ journal: "Nature" }, "snip")?.value).toBe(2.5);
+    expect(metrics.findJournalMetric({ journal: "Nature" }, "sjr")?.value).toBe(1.8);
+
+    const paper = papers.findPaperByExternalIds({ doi: "10.1000/metrics.1" })!;
+    const base = settingsRepo.defaultSettings();
+    expect(
+      metrics.paperPassesJournalMetric(paper, {
+        ...base,
+        journalMetricMode: "snip",
+        minJournalMetric: 2,
+        journalMetricUnknown: "reject",
+      }),
+    ).toBe(true);
+    expect(
+      metrics.paperPassesJournalMetric(paper, {
+        ...base,
+        journalMetricMode: "snip",
+        minJournalMetric: 3,
+        journalMetricUnknown: "reject",
+      }),
+    ).toBe(false);
+  });
+
+  it("refuses to label SNIP or SJR files as JCR", () => {
+    const snipOnly = "Journal,SNIP,Year\nNature,2.50,2025\n";
+    expect(() => metrics.importJournalMetricsCsv(snipOnly, { source: "jcr" })).toThrow(/JCR/);
+
+    const ifOnly = "Journal,Impact Factor,Year\nNature,50.5,2025\n";
+    expect(() => metrics.importJournalMetricsCsv(ifOnly, { source: "snip" })).toThrow(/SNIP/);
+    expect(() => metrics.importJournalMetricsCsv(ifOnly, { source: "sjr" })).toThrow(/SJR/);
+  });
+
   it("applies the configured metric threshold to paper recommendations", () => {
     const paper = papers.findPaperByExternalIds({ doi: "10.1000/metrics.1" })!;
     const base = settingsRepo.defaultSettings();

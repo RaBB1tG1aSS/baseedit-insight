@@ -41,7 +41,7 @@ export function SettingsForm({
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [csv, setCsv] = useState("");
-  const [importSource, setImportSource] = useState<"jcr" | "custom">("jcr");
+  const [importSource, setImportSource] = useState<"jcr" | "custom" | "snip" | "sjr">("jcr");
   const [importYear, setImportYear] = useState(new Date().getFullYear());
   const [importState, setImportState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -262,7 +262,7 @@ export function SettingsForm({
 
       <SettingsCard
         title="期刊影响力筛选"
-        description="按期刊影响力限制进入推荐/入库的论文。JCR 影响因子是授权数据，系统不内置、不抓取，需你自行导入；OpenAlex 2yr citedness 是公开的引用指标，不是 Clarivate IF。"
+        description="按期刊影响力限制进入推荐/入库的论文。JCR 影响因子是授权数据，系统不内置、不抓取，需你自行导入；OpenAlex 2yr citedness、CWTS SNIP、SCImago SJR 是公开指标，均按真实来源标注，不冒充 Clarivate IF。"
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="指标来源">
@@ -274,7 +274,9 @@ export function SettingsForm({
               <option value="off">关闭期刊指标筛选</option>
               <option value="jcr">JCR 影响因子（导入）</option>
               <option value="openalex">OpenAlex 2yr citedness</option>
-              <option value="auto">优先 JCR，缺失用 OpenAlex</option>
+              <option value="snip">CWTS SNIP（公开）</option>
+              <option value="sjr">SCImago SJR（公开）</option>
+              <option value="auto">优先 JCR，其次 OpenAlex / SNIP / SJR</option>
             </select>
           </Field>
           <Field label="最低指标（0 = 不筛）">
@@ -306,6 +308,8 @@ export function SettingsForm({
             <span>{metricCoverage.matchedJournals}/{metricCoverage.totalJournals} 个已入库期刊有指标</span>
             <span>JCR {metricCoverage.jcrCount}</span>
             <span>OpenAlex {metricCoverage.openalexCount}</span>
+            <span>SNIP {metricCoverage.snipCount}</span>
+            <span>SJR {metricCoverage.sjrCount}</span>
             <span>自定义 {metricCoverage.customCount}</span>
           </div>
           {metricCoverage.missingJournals.length ? (
@@ -350,10 +354,12 @@ export function SettingsForm({
             />
             <select
               value={importSource}
-              onChange={(event) => setImportSource(event.target.value as "jcr" | "custom")}
+              onChange={(event) => setImportSource(event.target.value as "jcr" | "custom" | "snip" | "sjr")}
               className="h-8 rounded-full border border-line bg-surface px-2 text-[10.5px] text-ink-2"
             >
               <option value="jcr">JCR IF</option>
+              <option value="snip">CWTS SNIP</option>
+              <option value="sjr">SCImago SJR</option>
               <option value="custom">自定义</option>
             </select>
             <input

@@ -59,6 +59,7 @@ BaseEdit Insight 是一个可以自己部署、长期积累的 **碱基编辑（
 
 ### 期刊影响力筛选
 - 支持导入你所在机构订阅的 **JCR Impact Factor CSV**，只在本地保存，不内置或分发授权数据；
+- 支持导入 **CWTS SNIP**、**SCImago SJR** 等公开期刊指标，并按真实来源标注，不冒充 IF；
 - 自动获取 **OpenAlex 2yr mean citedness**（开放引用指标，明确标注不是 IF）作为替代；
 - 可设置最低指标与未知期刊策略；新论文入库、每日推荐和文献库筛选均可使用；
 - 详见 [docs/JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md)。
@@ -283,7 +284,7 @@ Europe PMC / PubMed / Crossref / OpenAlex
 ## 测试
 
 ```bash
-npm test            # 42 个单元 / 数据库测试
+npm test            # 44 个单元 / 数据库测试
 npm run live:check  # 真实 Europe PMC / PubMed / Crossref 冒烟测试（不写库）
 npm run build       # 生产构建
 ```
@@ -322,6 +323,7 @@ npm run build       # 生产构建
 - [P0-AUDIT.md](./P0-AUDIT.md) — P0 客户端功能审计
 - [P1-P2-AUDIT.md](./P1-P2-AUDIT.md) — P1/P2 建设进度与剩余边界
 - [docs/JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md) — JCR 导入、OpenAlex 指标与筛选规则
+- [docs/OPEN-METRICS-PIPELINE.md](./docs/OPEN-METRICS-PIPELINE.md) — CWTS SNIP / SCImago SJR / OpenAlex 开放指标管线
 - [.env.example](./.env.example) — 全部环境变量
 
 ---
