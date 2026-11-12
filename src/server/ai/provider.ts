@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
 
 export type AiProviderName = "claude-cli" | "anthropic";
 
@@ -29,6 +30,29 @@ export interface AiCallResult {
 let cachedBin: string | null = null;
 let cachedAvailability: boolean | null = null;
 
+/**
+ * On Windows the npm global install exposes `claude` (a shell script) and
+ * `claude.cmd`, neither of which Node can spawn directly. The .cmd shim points
+ * at the real claude.exe, so follow it when possible.
+ */
+function resolveWindowsShim(candidate: string): string {
+  if (process.platform !== "win32" || /\.exe$/i.test(candidate)) return candidate;
+  const shims = /\.cmd$/i.test(candidate) ? [candidate] : [`${candidate}.cmd`];
+  for (const shim of shims) {
+    try {
+      if (!fs.existsSync(shim)) continue;
+      const text = fs.readFileSync(shim, "utf8");
+      const match = /%dp0%[\\/]([^"\r\n]+?\.exe)/i.exec(text);
+      if (!match) continue;
+      const exe = path.join(path.dirname(shim), match[1]);
+      if (fs.existsSync(exe)) return exe;
+    } catch {
+      // ignore unreadable or non-standard shims
+    }
+  }
+  return candidate;
+}
+
 export function resolveClaudeBin(): string {
   if (cachedBin) return cachedBin;
   const explicit = process.env.CLAUDE_CODE_EXECPATH;
@@ -44,7 +68,7 @@ export function resolveClaudeBin(): string {
       .map((line) => line.trim())
       .filter(Boolean);
     const exe = candidates.find((candidate) => /\.exe$/i.test(candidate));
-    cachedBin = exe ?? candidates[0] ?? "claude";
+    cachedBin = exe ?? resolveWindowsShim(candidates[0] ?? "claude");
   } catch {
     cachedBin = "claude";
   }
