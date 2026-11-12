@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 
 const dbFile = path.join(os.tmpdir(), `baseedit-manual-fulltext-${process.pid}-${Date.now()}.db`);
@@ -10,7 +11,10 @@ const papers = await import("@/server/db/repo/papers");
 const analysis = await import("@/server/db/repo/analysis");
 const manual = await import("@/server/fulltext/manual");
 const { fetchAndStoreFullText } = await import("@/server/fulltext/europepmc");
+const { extractPdfText, isPdfBytes } = await import("@/server/fulltext/pdf");
 const { getDb } = await import("@/server/db/client");
+
+const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 afterAll(() => {
   try {
@@ -102,6 +106,22 @@ ${longText("The authors observed efficient editing with minimal indels across mu
     expect(manual.removeManualFullText(paper.id)).toBe(true);
     expect(analysis.getFullText(paper.id)).toBeNull();
     expect(manual.removeManualFullText(paper.id)).toBe(false);
+  });
+
+  it("extracts text from a PDF file", async () => {
+    const data = new Uint8Array(fs.readFileSync(path.join(fixturesDir, "sample-paper.pdf")));
+    expect(isPdfBytes(data)).toBe(true);
+    expect(isPdfBytes(new Uint8Array([1, 2, 3, 4]))).toBe(false);
+
+    const result = await extractPdfText(data);
+    expect(result.pages).toBe(1);
+    expect(result.text).toContain("Base Editing in Human Cells");
+    expect(result.text).toContain("Results");
+    expect(result.text.length).toBeGreaterThan(500);
+
+    const pdfSections = manual.splitFullTextIntoSections(result.text);
+    expect(pdfSections.some((section) => section.heading === "Abstract")).toBe(true);
+    expect(pdfSections.some((section) => section.heading === "Results")).toBe(true);
   });
 
   it("rejects text that is too short", () => {

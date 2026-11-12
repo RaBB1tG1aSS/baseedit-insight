@@ -35,15 +35,18 @@ export function FullTextImport({
   const fileInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(defaultOpen && !imported);
   const [text, setText] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [generate, setGenerate] = useState(true);
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   const busy = state === "loading";
+  const ready = Boolean(pdfFile) || text.trim().length >= 500;
 
   const reset = () => {
     setText("");
+    setPdfFile(null);
     setFileName(null);
     setState("idle");
     setMessage(null);
@@ -52,17 +55,26 @@ export function FullTextImport({
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
-    if (/\.pdf$/i.test(file.name)) {
-      setState("error");
-      setMessage("暂不能直接解析 PDF：请用阅读器打开 PDF，全选复制正文后粘贴到下方文本框。");
+    if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
+      if (file.size > 25 * 1024 * 1024) {
+        setState("error");
+        setMessage("PDF 不能超过 25 MB。");
+        return;
+      }
+      setPdfFile(file);
+      setText("");
+      setFileName(file.name);
+      setState("idle");
+      setMessage(null);
       return;
     }
     if (!/\.(txt|text|md|markdown)$/i.test(file.name) && !file.type.startsWith("text/")) {
       setState("error");
-      setMessage("仅支持 .txt / .md 等纯文本文件；PDF 请复制正文后粘贴。");
+      setMessage("仅支持 .txt / .md / .pdf；其他格式请复制正文后粘贴。");
       return;
     }
     const content = await file.text();
+    setPdfFile(null);
     setText(content.slice(0, MAX_CHARS));
     setFileName(file.name);
     setState("idle");
@@ -70,19 +82,30 @@ export function FullTextImport({
   };
 
   const submit = async (withGenerate: boolean) => {
-    if (text.trim().length < 500) {
+    if (!ready) {
       setState("error");
-      setMessage("正文太短：至少需要 500 个字符。请检查是否只粘贴了标题或摘要。");
+      setMessage("请选择 PDF 文件，或粘贴至少 500 个字符的正文。");
       return;
     }
     setState("loading");
     setMessage(null);
     try {
-      const response = await fetch(`/api/papers/${paperId}/fulltext`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text, generate: withGenerate }),
-      });
+      let response: Response;
+      if (pdfFile) {
+        const form = new FormData();
+        form.append("file", pdfFile);
+        form.append("generate", String(withGenerate));
+        response = await fetch(`/api/papers/${paperId}/fulltext`, {
+          method: "POST",
+          body: form,
+        });
+      } else {
+        response = await fetch(`/api/papers/${paperId}/fulltext`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text, generate: withGenerate }),
+        });
+      }
       const payload = (await response.json().catch(() => ({}))) as {
         message?: string;
         error?: string;
@@ -207,7 +230,7 @@ export function FullTextImport({
         <span className="min-w-0">
           <span className="block text-[12.5px] font-medium text-ink">无法获取全文？手动导入原文</span>
           <span className="mt-0.5 block text-[11px] leading-5 text-muted">
-            从出版商页面、机构订阅或预印本复制正文（或上传 .txt / .md），再生成包含 Results 与图表细节的全文级精讲。
+            从出版商页面、机构订阅或预印本下载 PDF（也支持 .txt / .md），再生成包含 Results 与图表细节的全文级精讲。
           </span>
         </span>
       </button>
@@ -221,7 +244,7 @@ export function FullTextImport({
           <div className="kicker">全文不可获取</div>
           <h3 className="mt-1 text-[13.5px] font-semibold text-ink">手动导入论文原文</h3>
           <p className="mt-1 max-w-2xl text-[11px] leading-5 text-muted">
-            把论文正文粘贴到下方，或上传纯文本文件。系统会按章节切分并只保存在本机数据库，
+            上传 PDF，或把论文正文粘贴到下方（也可上传 .txt / .md）。系统会提取文字、按章节切分并只保存在本机数据库，
             随后可生成全文级精讲。请确认你有权访问该原文，并遵守出版方许可。
           </p>
         </div>
@@ -242,7 +265,7 @@ export function FullTextImport({
         <input
           ref={fileInput}
           type="file"
-          accept=".txt,.text,.md,.markdown,text/plain"
+          accept=".txt,.text,.md,.markdown,.pdf,text/plain,application/pdf"
           className="hidden"
           onChange={(event) => void onFile(event.target.files?.[0])}
         />
@@ -251,26 +274,51 @@ export function FullTextImport({
           onClick={() => fileInput.current?.click()}
           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[12px] text-ink-2 hover:border-line-strong"
         >
-          <FileText size={12} /> 选择 .txt / .md
+          <FileText size={12} /> 选择 .pdf / .txt / .md
         </button>
         {fileName ? <span className="text-[11px] text-muted">{fileName}</span> : null}
         <span className="ml-auto num text-[10.5px] text-faint">
-          {text.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
+          {pdfFile
+            ? `${(pdfFile.size / 1024 / 1024).toFixed(1)} MB`
+            : `${text.length.toLocaleString()} / ${MAX_CHARS.toLocaleString()}`}
         </span>
       </div>
 
-      <textarea
-        value={text}
-        onChange={(event) => {
-          setText(event.target.value.slice(0, MAX_CHARS));
-          setState("idle");
-          setMessage(null);
-        }}
-        rows={10}
-        spellCheck={false}
-        placeholder="在此粘贴论文正文。建议包含 Abstract、Introduction、Results、Discussion 等章节，可去掉参考文献、页眉页脚与作者信息。"
-        className="mt-3 w-full resize-y rounded-xl border border-line bg-surface px-3.5 py-3 text-[12.5px] leading-6 text-ink outline-none placeholder:text-faint focus:border-accent/50"
-      />
+      {pdfFile ? (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-3.5 py-3">
+          <div className="min-w-0">
+            <div className="truncate text-[12px] font-medium text-ink">{pdfFile.name}</div>
+            <div className="mt-0.5 text-[10.5px] text-muted">
+              导入时将自动提取文字层并切分章节；扫描版/图片版 PDF 需要先 OCR。
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setPdfFile(null);
+              setFileName(null);
+              if (fileInput.current) fileInput.current.value = "";
+            }}
+            className="shrink-0 rounded-full p-1 text-faint hover:bg-surface hover:text-ink"
+            aria-label="移除所选 PDF"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <textarea
+          value={text}
+          onChange={(event) => {
+            setText(event.target.value.slice(0, MAX_CHARS));
+            setState("idle");
+            setMessage(null);
+          }}
+          rows={10}
+          spellCheck={false}
+          placeholder="在此粘贴论文正文，或在上方选择 PDF / .txt / .md 文件。建议包含 Abstract、Introduction、Results、Discussion 等章节，可去掉参考文献、页眉页脚与作者信息。"
+          className="mt-3 w-full resize-y rounded-xl border border-line bg-surface px-3.5 py-3 text-[12.5px] leading-6 text-ink outline-none placeholder:text-faint focus:border-accent/50"
+        />
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <label className="inline-flex items-center gap-2 text-[11.5px] text-muted">
@@ -286,7 +334,7 @@ export function FullTextImport({
           <button
             type="button"
             onClick={() => submit(false)}
-            disabled={busy || text.trim().length < 500}
+            disabled={busy || !ready}
             className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[12px] text-ink-2 hover:border-line-strong disabled:opacity-50"
           >
             仅导入
@@ -294,11 +342,11 @@ export function FullTextImport({
           <button
             type="button"
             onClick={() => submit(true)}
-            disabled={busy || text.trim().length < 500}
+            disabled={busy || !ready}
             className="inline-flex h-8 items-center gap-1.5 rounded-full bg-accent px-3.5 text-[12px] font-medium text-white hover:bg-accent-strong disabled:opacity-50"
           >
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-            {busy ? "导入中…" : "导入并生成精讲"}
+            {busy ? (pdfFile ? "解析 PDF 中…" : "导入中…") : "导入并生成精讲"}
           </button>
         </div>
       </div>
@@ -317,7 +365,7 @@ export function FullTextImport({
       ) : null}
 
       <p className="mt-2 text-[10px] leading-4 text-faint">
-        导入内容只写入本机 SQLite，不会上传到任何第三方服务；自动抓取流程不会覆盖你导入的文本。
+        PDF 只在你的本机服务器上解析，原始文件不会被保存或发送到第三方；导入内容写入本机 SQLite，自动抓取流程不会覆盖。
       </p>
     </div>
   );

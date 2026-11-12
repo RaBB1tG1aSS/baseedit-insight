@@ -106,7 +106,7 @@ P0 的日常操作现在集中在首页的 **P0 Workspace / 研究控制台**（
 ## 6. 验收命令
 
 ```bash
-npm test                 # 49 passed
+npm test                 # 50 passed
 npm run build            # 生产构建
 npm run live:check       # 真实 API 冒烟
 npx tsx scripts/qa.ts    # 浏览器 QA（0 console error）
