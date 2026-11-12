@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import type { Paper } from "@/lib/types";
+import type { FullTextMaterialStatus, Paper } from "@/lib/types";
 import { getDb, nowIso } from "../db/client";
 import { updatePaper } from "../db/repo/papers";
 import {
@@ -239,7 +239,7 @@ async function resolvePmcImageUrls(pmcid: string): Promise<Map<string, string>> 
 }
 
 export interface FullTextResult {
-  accessStatus: "oa_fulltext" | "abstract_only";
+  accessStatus: FullTextMaterialStatus;
   sections: number;
   figures: number;
   license: string | null;
@@ -271,36 +271,39 @@ function storeAbstractOnly(paper: Paper, error: string | null, permanent = true)
  */
 export async function fetchAndStoreFullText(
   paper: Paper,
-  options: { force?: boolean } = {},
+  options: { force?: boolean; allowManualOverwrite?: boolean } = {},
 ): Promise<FullTextResult> {
   const row = getDb()
     .prepare("SELECT pmcid, full_text_access_status FROM papers WHERE id = ?")
     .get(paper.id) as { pmcid: string | null; full_text_access_status: string } | undefined;
   const pmcid = row?.pmcid ?? paper.pmcid;
 
-  if (!options.force) {
-    const existing = getDb()
-      .prepare("SELECT access_status, char_count, sections_json FROM full_texts WHERE paper_id = ?")
-      .get(paper.id) as { access_status: string; char_count: number; sections_json: string | null } | undefined;
-    if (existing?.access_status === "oa_fulltext" && existing.char_count > 0) {
-      const figureCount = (
-        getDb().prepare("SELECT COUNT(*) AS n FROM figures WHERE paper_id = ?").get(paper.id) as { n: number }
-      ).n;
-      let sectionCount = 0;
-      try {
-        const parsed = JSON.parse(existing.sections_json ?? "[]");
-        sectionCount = Array.isArray(parsed) ? parsed.length : 0;
-      } catch {
-        sectionCount = 0;
-      }
-      return {
-        accessStatus: "oa_fulltext",
-        sections: sectionCount,
-        figures: figureCount,
-        license: paper.fullTextLicense,
-        error: null,
-      };
+  const existing = getDb()
+    .prepare("SELECT access_status, char_count, sections_json FROM full_texts WHERE paper_id = ?")
+    .get(paper.id) as { access_status: string; char_count: number; sections_json: string | null } | undefined;
+
+  // Text the user imported by hand is authoritative: automatic fetching must
+  // never replace it (not even with force), otherwise "regenerate" would wipe it.
+  const isManual = existing?.access_status === "manual_fulltext";
+  const hasOpenAccess = existing?.access_status === "oa_fulltext" && existing.char_count > 0;
+  if (existing && !options.allowManualOverwrite && (isManual || (hasOpenAccess && !options.force))) {
+    const figureCount = (
+      getDb().prepare("SELECT COUNT(*) AS n FROM figures WHERE paper_id = ?").get(paper.id) as { n: number }
+    ).n;
+    let sectionCount = 0;
+    try {
+      const parsed = JSON.parse(existing.sections_json ?? "[]");
+      sectionCount = Array.isArray(parsed) ? parsed.length : 0;
+    } catch {
+      sectionCount = 0;
     }
+    return {
+      accessStatus: isManual ? "manual_fulltext" : "oa_fulltext",
+      sections: sectionCount,
+      figures: figureCount,
+      license: isManual ? null : paper.fullTextLicense,
+      error: null,
+    };
   }
 
   if (!pmcid) return storeAbstractOnly(paper, "缺少 PMCID，无法获取开放获取全文");

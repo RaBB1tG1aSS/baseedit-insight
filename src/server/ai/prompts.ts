@@ -18,7 +18,7 @@ function authorsLine(paper: Paper): string {
   return paper.authors.length > 8 ? `${shown}, et al.` : shown;
 }
 
-export function paperHeader(paper: Paper): string {
+export function paperHeader(paper: Paper, fullTextLabel?: string): string {
   return [
     `论文 ID：${paper.id}`,
     `英文标题：${paper.title}`,
@@ -28,7 +28,7 @@ export function paperHeader(paper: Paper): string {
     `论文类型：${paper.articleType ?? "未知"}  同行评审状态：${paper.peerReviewStatus === "peer_reviewed" ? "同行评审" : paper.peerReviewStatus === "preprint" ? "预印本" : "未知"}`,
     `DOI：${paper.doi ?? "无"}  PMID：${paper.pmid ?? "无"}  PMCID：${paper.pmcid ?? "无"}`,
     `撤稿状态：${paper.retractionStatus}`,
-    `全文状态：${paper.fullTextAccessStatus === "oa_fulltext" ? "开放获取全文" : "仅摘要"}`,
+    `全文状态：${fullTextLabel ?? (paper.fullTextAccessStatus === "oa_fulltext" ? "开放获取全文" : "仅摘要")}`,
   ].join("\n");
 }
 
@@ -45,6 +45,7 @@ export function deepReadPrompt(params: {
     .join("\n\n")
     .slice(0, maxChars);
   const analysisLevel = fullTextSections.length ? "全文" : "仅摘要（无法访问全文）";
+  const fullTextLabel = fullTextSections.length ? "全文可用（开放获取或用户导入）" : undefined;
 
   const figureBlock = figures.length
     ? figures
@@ -55,7 +56,7 @@ export function deepReadPrompt(params: {
 
   return `【分析级别】${analysisLevel}
 
-${paperHeader(paper)}
+${paperHeader(paper, fullTextLabel)}
 
 【摘要】
 ${paper.abstract ?? "（无摘要）"}

@@ -6,7 +6,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type {
-  FullTextStatus,
+  FullTextMaterialStatus,
   Paper,
   QualityAssessment,
   SourceLink,
@@ -35,7 +35,7 @@ export function PaperSidebar({
   verifications: VerificationRecord[];
   sources: SourceLink[];
   hasAnalysis: boolean;
-  effectiveAccess: FullTextStatus;
+  effectiveAccess: FullTextMaterialStatus;
   fullTextCharCount: number;
 }) {
   const passCount = verifications.filter((record) => record.result === "pass").length;
@@ -99,7 +99,16 @@ export function PaperSidebar({
             }
             title={metricTitle(paper.journalMetric, paper.journalMetricSource, paper.journalMetricYear)}
           />
-          <Meta label="全文" value={effectiveAccess === "oa_fulltext" ? "开放获取" : "仅摘要"} />
+          <Meta
+            label="全文"
+            value={
+              effectiveAccess === "oa_fulltext"
+                ? "开放获取"
+                : effectiveAccess === "manual_fulltext"
+                  ? "用户导入"
+                  : "仅摘要"
+            }
+          />
           <Meta label="许可" value={paper.fullTextLicense ?? "—"} />
           {fullTextCharCount ? <Meta label="全文规模" value={`${Math.round(fullTextCharCount / 1000)}k 字符`} /> : null}
           {paper.pmid ? (

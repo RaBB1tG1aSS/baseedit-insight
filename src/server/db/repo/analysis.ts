@@ -3,7 +3,7 @@ import type {
   Figure,
   FigureAnalysis,
   FigureAnalysisContent,
-  FullTextStatus,
+  FullTextMaterialStatus,
   QualityAssessment,
   QualityDimensionKey,
   SourceLink,
@@ -179,7 +179,7 @@ export function getQualityAssessment(paperId: string): QualityAssessment | null 
 
 export interface FullTextRecord {
   paperId: string;
-  accessStatus: FullTextStatus;
+  accessStatus: FullTextMaterialStatus;
   sourceName: string | null;
   sourceUrl: string | null;
   license: string | null;
@@ -228,7 +228,7 @@ export function getFullText(paperId: string): FullTextRecord | null {
   if (!row) return null;
   return {
     paperId: String(row.paper_id),
-    accessStatus: row.access_status as FullTextStatus,
+    accessStatus: row.access_status as FullTextMaterialStatus,
     sourceName: (row.source_name as string | null) ?? null,
     sourceUrl: (row.source_url as string | null) ?? null,
     license: (row.license as string | null) ?? null,
@@ -238,6 +238,11 @@ export function getFullText(paperId: string): FullTextRecord | null {
     fetchedAt: (row.fetched_at as string | null) ?? null,
     error: (row.error as string | null) ?? null,
   };
+}
+
+export function deleteFullText(paperId: string): boolean {
+  const result = getDb().prepare("DELETE FROM full_texts WHERE paper_id = ?").run(paperId);
+  return result.changes > 0;
 }
 
 export interface FigureInput {

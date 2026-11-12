@@ -38,6 +38,7 @@ import { PaperSidebar } from "@/components/paper-sidebar";
 import { FavoriteButton, NoteEditor, ReadStatusControl, ReadingTracker } from "@/components/library-controls";
 import { CompareToggle } from "@/components/compare-controls";
 import { ActionButton } from "@/components/action-button";
+import { FullTextImport } from "@/components/fulltext-import";
 import { PrintButton } from "@/components/print-button";
 import {
   Badge,
@@ -120,8 +121,16 @@ export default async function PaperPage({ params }: { params: Promise<{ id: stri
           <PeerReviewBadge status={paper.peerReviewStatus} />
           <RetractionBadge status={paper.retractionStatus} />
           <Badge variant="outline">
-            {effectiveAccess === "oa_fulltext" ? <BookOpen size={10} /> : <FileText size={10} />}
-            {effectiveAccess === "oa_fulltext" ? "开放获取全文" : "摘要级材料"}
+            {effectiveAccess === "oa_fulltext" || effectiveAccess === "manual_fulltext" ? (
+              <BookOpen size={10} />
+            ) : (
+              <FileText size={10} />
+            )}
+            {effectiveAccess === "oa_fulltext"
+              ? "开放获取全文"
+              : effectiveAccess === "manual_fulltext"
+                ? "已导入全文"
+                : "摘要级材料"}
           </Badge>
           {paper.focusAreas.map((area) => (
             <FocusBadge key={area} area={area} />
@@ -227,9 +236,23 @@ export default async function PaperPage({ params }: { params: Promise<{ id: stri
           ) : null}
           {abstractOnly ? (
             <InlineNotice tone="muted" title="摘要级分析">
-              当前只能访问摘要（未获取到可用的开放获取全文），因此精讲不包含对 Figures、具体数值或 Results 细节的描述。图表部分仅展示可公开获取的图注或官方链接。
+              当前只能访问摘要（未获取到可用的开放获取全文），因此精讲不包含对 Figures、具体数值或 Results 细节的描述。图表部分仅展示可公开获取的图注或官方链接。如果你能自行获取原文，可在下方手动导入，再生成全文级精讲。
             </InlineNotice>
           ) : null}
+        </div>
+      ) : null}
+
+      {effectiveAccess !== "oa_fulltext" ? (
+        <div className="mt-5">
+          <FullTextImport
+            paperId={paper.id}
+            imported={
+              effectiveAccess === "manual_fulltext"
+                ? { sections: fullText?.sections.length ?? 0, chars: fullText?.charCount ?? 0 }
+                : null
+            }
+            defaultOpen={abstractOnly}
+          />
         </div>
       ) : null}
 

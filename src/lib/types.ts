@@ -29,6 +29,8 @@ export type RetractionStatus =
   | "correction"
   | "unknown";
 export type FullTextStatus = "oa_fulltext" | "abstract_only" | "unknown";
+/** Status of the locally stored full-text material (papers keep FullTextStatus). */
+export type FullTextMaterialStatus = FullTextStatus | "manual_fulltext";
 
 export type JournalMetricSource = "jcr" | "openalex" | "custom" | "snip" | "sjr";
 export type JournalMetricMode = "off" | "jcr" | "openalex" | "snip" | "sjr" | "auto";
