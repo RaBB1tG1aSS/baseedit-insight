@@ -41,6 +41,7 @@ describe("journal metric normalisation", () => {
     );
     expect(metrics.normalizeIssn("0028-0836")).toBe("00280836");
     expect(metrics.normalizeIssn("1234-567X")).toBe("1234567X");
+    expect(metrics.normalizeIssn("15424863, 00079235")).toBe("15424863");
     expect(metrics.normalizeIssn("bad")).toBeNull();
   });
 });
@@ -113,6 +114,22 @@ Nature,0028-0836,50.5,2025
         journalMetricUnknown: "reject",
       }),
     ).toBe(false);
+  });
+
+  it("parses SCImago's semicolon export with decimal commas", () => {
+    const csv = [
+      "Rank;Title;Type;Issn;SJR",
+      "1;Nature;journal;0028-0836, 1476-4687;35,568",
+      "2;Some Book Series;book series;1234-5678;1,5",
+    ].join(String.fromCharCode(10));
+
+    const result = metrics.importJournalMetricsCsv(csv, { source: "sjr", year: 2025 });
+    expect(result.imported).toBe(1);
+    expect(result.skipped).toBe(1);
+
+    const metric = metrics.findJournalMetric({ journal: "Nature" }, "sjr");
+    expect(metric?.value).toBe(35.568);
+    expect(metric?.issn).toBe("00280836");
   });
 
   it("refuses to label SNIP or SJR files as JCR", () => {

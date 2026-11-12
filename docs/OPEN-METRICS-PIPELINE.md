@@ -30,12 +30,12 @@ npm run metrics:import -- data/external/cwts/cwts-normalized.csv --source=snip
 ## 3. SCImago SJR 导入
 
 1. 在普通桌面浏览器打开 <https://www.scimagojr.com/journalrank.php>；
-2. 站点有 Cloudflare 人机验证，自动化会被 403 拦截；请手动完成验证并下载官方 XLS；
-3. 转成 CSV，保留 `Title`、`ISSN`、`SJR`、`Year`；
+2. 站点有 Cloudflare 人机验证，自动化会被 403 拦截；请手动完成验证并下载官方 CSV（或 XLS 转 CSV）；
+3. 官方 CSV 用分号分隔、SJR 小数点为逗号（`35,568` = 35.568），导入器已支持；文件没有年份列，用 `--year` 指定榜单年份；非 `journal` / `trade journal` 类型会自动跳过；
 4. 导入：
 
 ```bash
-npm run metrics:import -- data/external/sjr/sjr-normalized.csv --source=sjr
+npm run metrics:import -- data/external/sjr/scimagojr-2025.csv --source=sjr --year=2025
 ```
 
 阈值建议从 **0.5–1.5** 开始。SCImago 要求非商业使用并引用其网站。

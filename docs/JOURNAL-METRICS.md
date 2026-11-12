@@ -171,10 +171,15 @@ npm run metrics:import -- "C:\path\to\jcr-2025.csv" --year=2025 --source=jcr
 
 ### SCImago SJR
 
-1. 打开 <https://www.scimagojr.com/journalrank.php>，使用页面提供的下载按钮获取 XLS；
-2. 转换为 CSV，保留 `Title`、`ISSN`、`SJR`、`Year`（若文件没有年份，导入时手动填写）；SCImago 站点启用了 Cloudflare 人机验证，自动化脚本会被 403 拦截，请用普通桌面浏览器手动完成验证后下载；系统不会绕过验证；
-3. 设置页导入，来源选 **SCImago SJR**；
+1. 打开 <https://www.scimagojr.com/journalrank.php>，使用页面提供的下载按钮获取官方 CSV（XLS 也可）；
+2. 官方 CSV 可以直接导入：文件用分号分隔、SJR 小数点是逗号（如 `35,568` 表示 35.568），系统已按此格式解析；文件没有年份列，请把导入年份填为榜单年份（如 2025）；book series / conference 等非期刊类型会自动跳过；
+3. 设置页导入，来源选 **SCImago SJR**；命令行示例：
+   ```bash
+   npm run metrics:import -- data/external/sjr/scimagojr-2025.csv --source=sjr --year=2025
+   ```
 4. SJR 量纲与 IF 不同，阈值建议从 **0.5–1.5** 开始。
+
+> SCImago 站点启用了 Cloudflare 人机验证，自动化脚本会被 403 拦截；请用普通桌面浏览器手动完成验证后下载，系统不会绕过验证。
 
 > 这些公开数据不等于 JCR IF；系统会在论文徽标和核验记录中标注 `SNIP` / `SJR`，不会写成 `IF`。下载的数据请只在本机使用，遵守 CWTS/SCImago 的使用条款，不要提交到 Git。
 

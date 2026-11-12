@@ -46,7 +46,9 @@ export function normalizeJournalName(name: string | null | undefined): string {
 
 export function normalizeIssn(value: string | null | undefined): string | null {
   if (!value) return null;
-  const cleaned = value.toUpperCase().replace(/[^0-9X]/g, "");
+  // SCImago lists both ISSNs in one cell, e.g. "15424863, 00079235".
+  const first = value.split(/[,;/\s]+/).find((part) => part.trim());
+  const cleaned = (first ?? "").toUpperCase().replace(/[^0-9X]/g, "");
   return cleaned.length === 8 ? cleaned : null;
 }
 
@@ -398,8 +400,15 @@ function headerIndex(headers: string[], aliases: string[]): number {
   return headers.findIndex((header) => aliases.includes(header));
 }
 
-function parseMetricValue(raw: string): number | null {
-  const value = raw.replace(/[<>≈~,\s]/g, "");
+function parseMetricValue(raw: string, delimiter = ","): number | null {
+  let value = raw.replace(/[<>≈~\s]/g, "");
+  if (!value) return null;
+  if (delimiter === ";" && value.includes(",")) {
+    // European CSV (e.g. SCImago's official export): "35,568" means 35.568.
+    value = value.replace(/\./g, "").replace(/,/g, ".");
+  } else {
+    value = value.replace(/,/g, "");
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
@@ -476,6 +485,7 @@ export function importJournalMetricsCsv(
   const issnIndex = headerIndex(headers, ["issn", "issn print", "print issn"]);
   const eissnIndex = headerIndex(headers, ["eissn", "issn online", "online issn"]);
   const yearIndex = headerIndex(headers, ["year", "jcr year", "metric year"]);
+  const typeIndex = source === "sjr" ? headerIndex(headers, ["type"]) : -1;
   const headerYearMatch = /^(\d{4})\s+jif$/.exec(headers[metricIndex] ?? "");
 
   if (journalIndex < 0 || metricIndex < 0) {
@@ -495,10 +505,17 @@ export function importJournalMetricsCsv(
   const run = getDb().transaction(() => {
     for (const row of rows.slice(headerRowIndex + 1)) {
       const journalName = (row[journalIndex] ?? "").trim();
-      const metricValue = parseMetricValue(row[metricIndex] ?? "");
+      const metricValue = parseMetricValue(row[metricIndex] ?? "", delimiter);
       if (!journalName || metricValue == null) {
         skipped += 1;
         continue;
+      }
+      if (typeIndex >= 0) {
+        const sourceType = (row[typeIndex] ?? "").trim().toLowerCase();
+        if (sourceType && sourceType !== "journal" && sourceType !== "trade journal") {
+          skipped += 1;
+          continue;
+        }
       }
       const rowYear = yearIndex >= 0 ? Number.parseInt(row[yearIndex] ?? "", 10) : NaN;
       const year =

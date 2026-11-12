@@ -12,7 +12,7 @@ npm test
 
 ```
 Test Files  9 passed (9)
-Tests       44 passed (44)
+Tests       45 passed (45)
 Duration    ~1 s
 ```
 

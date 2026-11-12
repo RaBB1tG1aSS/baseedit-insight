@@ -284,7 +284,7 @@ Europe PMC / PubMed / Crossref / OpenAlex
 ## 测试
 
 ```bash
-npm test            # 44 个单元 / 数据库测试
+npm test            # 45 个单元 / 数据库测试
 npm run live:check  # 真实 Europe PMC / PubMed / Crossref 冒烟测试（不写库）
 npm run build       # 生产构建
 ```
