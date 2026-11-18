@@ -2,7 +2,7 @@
 
 > 依据 `prompt.md` 第十六节，P0 稳定后进入 P1、P2。本文记录当前实际实现、剩余边界和下一步优先级。
 >
-> 更新：2026-11-04 · 生产构建 · 37 个自动化测试通过
+> 更新：2026-11-18 · 生产构建 · 50 个自动化测试通过
 
 ---
 
@@ -35,6 +35,7 @@
 | 6 | BibTeX 导出 | ✅ 本轮补齐 | `/api/export/bibtex?ids=…`；论文页与对比页均可导出 |
 | 7 | 更多学术数据库集成 | ⚠️ 部分 | Europe PMC、PubMed、Crossref 为主；OpenAlex 补充引用/撤稿；Semantic Scholar 可选；尚未加入新的检索源 |
 | 8 | 更完整的研究统计和可视化 | ✅ 基础版 | `/insights` 自定义 SVG/CSS 图表：年份、方向、评分、实体类型、引用、个性化推荐；无第三方图表依赖 |
+| 9 | 全文获取与手动导入 | ✅ 已实现 | 优先自动获取 OA 全文；无法获取时，论文页可上传 PDF（服务端提取文字层）或粘贴正文（.txt / .md），切分章节后生成全文级精讲；导入内容仅存本机，自动抓取不覆盖 |
 
 ---
 
@@ -45,6 +46,13 @@
 - **筛选落点**：新候选入库门槛、每日推荐过滤、文献库 `minMetric` 筛选、论文/对比页指标徽标。
 - **数据表**：`journal_metrics` + papers 的 `journal_metric*` 字段，迁移 `0002_journal_metrics`。
 - **文档**：[JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md)。
+
+## 扩展：开放期刊指标与手动全文导入（2026-11 更新）
+
+- **CWTS SNIP / SCImago SJR**：与 JCR、OpenAlex 并列的公开期刊指标；支持官方 CSV 导入（含分号分隔、小数逗号），迁移 `0003_open_metrics_sources`。
+- **手动导入原文**：论文页上传 PDF / `.txt` / `.md` 或粘贴正文；PDF 仅在本机解析，扫描版需先 OCR；迁移 `0004_manual_fulltext`。
+- **防覆盖保护**：自动全文抓取（含 `force` 重新生成）不会覆盖用户手动导入的文本。
+- **文档**：[OPEN-METRICS-PIPELINE.md](./docs/OPEN-METRICS-PIPELINE.md)、[JOURNAL-METRICS.md](./docs/JOURNAL-METRICS.md)。
 
 ## 本轮新增内容
 
@@ -61,7 +69,7 @@
 ## 验证
 
 ```bash
-npm test          # 8 个测试文件，37 passed
+npm test          # 10 个测试文件，50 passed
 npm run build     # 生产构建通过
 npx tsx scripts/qa.ts
 ```
